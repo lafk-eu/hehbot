@@ -1,1 +1,4 @@
-key.txt
+__pycache__
+downloads
+bot_key.txt
+chatgpt_key.txt
