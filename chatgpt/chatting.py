@@ -2,6 +2,8 @@ import openai
 import httpx
 import asyncio
 
+import re
+
 from heh_bot import api
 
 openai.api_key = api.get_chatgpt_api_key()
@@ -18,12 +20,16 @@ instructions = '''
 
 async def generate_text(prompt: str):
     prompt = instructions + prompt
+    
+
     headers = {
         'Authorization': f'Bearer {openai.api_key}'
     }
     data = {
-        "model": "gpt-4",  # Заміни на ідентифікатор актуальної чатової моделі
-        "messages": [{"role": "user", "content": prompt}]
+        "model": "text-davinci-003",  # Використовуйте актуальний ідентифікатор моделі
+        "prompt": prompt,
+        "max_tokens": estimate_tokens(prompt),  # Встановлюємо ліміт відповіді в кількість токенів, як у вхідному реченні
+        "temperature": 0.7  # Додаткова варіативність відповіді
     }
 
     async with httpx.AsyncClient(timeout=40.0) as client:

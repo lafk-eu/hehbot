@@ -14,6 +14,11 @@ TOKEN = api.get_bot_api_key()
 dp = Dispatcher()
 bot = Bot(TOKEN, parse_mode=ParseMode.HTML)
 
+from chatgpt.tg_person import TGPersonRepository
+from chatgpt.chat_memory import DialogRepository
+user_repo = TGPersonRepository('data/users.db')
+chat_repo = DialogRepository('data/chats.db')
+
 from handlers import *
 
 # Функція для обробки команди /start
