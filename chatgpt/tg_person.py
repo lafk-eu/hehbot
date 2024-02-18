@@ -60,3 +60,24 @@ class TGPersonRepository:
             if row:
                 return TGPerson(row[0], row[1], row[2].split(','), row[3])
             return None
+        
+    def get_all_person_names(self):
+        with self.connect() as conn:
+            cursor = conn.cursor()
+            cursor.execute('SELECT name FROM persons')
+            names = cursor.fetchall()
+            # Перетворюємо список імен в рядок
+            names_str = str([name[0] for name in names])
+            return names_str 
+            # Результатом буде рядок, 
+            # що містить візуальне представлення списку, 
+            # наприклад: "['Максим', 'Олена', 'Іван']".
+        
+    def get_person_by_name(self, name: str):
+        with self.connect() as conn:
+            cursor = conn.cursor()
+            cursor.execute('SELECT id, name, pronouns, bio FROM persons WHERE name = ? LIMIT 1', (name,))
+            row = cursor.fetchone()
+            if row:
+                return TGPerson(row[0], row[1], row[2].split(','), row[3])
+            return None

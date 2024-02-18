@@ -16,7 +16,7 @@ async def estimate_tokens(text):
 class Dialog:
     MAX_MESSAGES = 5  # Максимальна кількість повідомлень від користувачів
     
-    def __init__(self, group_id: str, chatbot_msg: ChatMessage, users_msgs: list[ChatMessage]) -> None:
+    def __init__(self, group_id: int, chatbot_msg: ChatMessage, users_msgs: list[ChatMessage]) -> None:
         self.group_id = group_id
         self.chatbot_msg = chatbot_msg
         self.users_msgs = users_msgs
@@ -57,7 +57,6 @@ class DialogRepository:
             cursor.execute("""
             CREATE TABLE IF NOT EXISTS chat_messages (
                 id INTEGER PRIMARY KEY,
-                group_id TEXT NOT NULL,
                 text TEXT NOT NULL,
                 date TEXT NOT NULL,
                 user_id TEXT NOT NULL,
@@ -69,20 +68,24 @@ class DialogRepository:
     def add_dialog(self, dialog: Dialog) -> None:
         with sqlite3.connect(self.db_path) as conn:
             cursor = conn.cursor()
-            for message in dialog.users_messages + [dialog.chatbot_message]:
+            for message in dialog.users_msgs:
+                print("id: " + str(dialog.group_id))
+                print("text: " + message.text)
+                print("date: " + dialog.str_date(message.date))
+                print("chatbot: " + dialog.chatbot_msg.text)
                 cursor.execute("""
-                    INSERT INTO chat_messages (group_id, text, date, user_id, is_bot_message)
+                    INSERT INTO chat_messages (id, text, date, user_id, is_bot_message)
                     VALUES (?, ?, ?, ?, ?)
-                """, (dialog.group_id, message.text, message.str_date(message.date), message.user_id, isinstance(message, type(dialog.chatbot_message))))
+                """, (dialog.group_id, message.text, dialog.str_date(message.date), message.user_id, isinstance(message, type(dialog.chatbot_msg))))
             conn.commit()
 
-    def get_dialogues_by_group_id(self, group_id: str) -> list[Dialog]:
+    def get_dialogues_by_group_id(self, group_id: int) -> list[Dialog]:
         dialogs = []
         with sqlite3.connect(self.db_path) as conn: # {
             cursor = conn.cursor()
             cursor.execute("""
                 SELECT text, date, user_id, is_bot_message FROM chat_messages
-                WHERE group_id = ?
+                WHERE id = ?
                 ORDER BY date
             """, (group_id,))
             rows = cursor.fetchall()
@@ -99,7 +102,7 @@ class DialogRepository:
                 user_msgs = messages[:Dialog.MAX_MESSAGES]
                 messages = messages[Dialog.MAX_MESSAGES:]
 
-                dialog = Dialog(group_id=group_id, chatbot_message=bot_message, users_messages=user_msgs)
+                dialog = Dialog(group_id, bot_message, user_msgs)
                 dialogs.append(dialog)
 
                 # Якщо усі повідомлення користувачів були використані, завершуємо цикл
