@@ -1,0 +1,203 @@
+[
+    {
+        "input_text": "question: What genres does Platon Dubashydze's YouTube channel focus on? context: Welcome to my channel! Here you will find various original videos mainly dedicated to gaming themes, game reviews, and of course, Category B jokes, because what would it be without them. About me: a director by education, a game developer at heart, an amateur in fact.",
+        "output_text": "gaming themes, game reviews, Category B jokes"
+    },
+    {
+        "input_text": "question: What is Platon Dubashydze's background? context: Welcome to my channel! Here you will find various original videos mainly dedicated to gaming themes, game reviews, and of course, Category B jokes, because what would it be without them. About me: a director by education, a game developer at heart, an amateur in fact.",
+        "output_text": "director by education, game developer at heart, amateur in fact"
+    },
+    {
+        "input_text": "question: How does Platon Dubashydze describe his YouTube content? context: Welcome to my channel! Here you will find various original videos mainly dedicated to gaming themes, game reviews, and of course, Category B jokes, because what would it be without them. About me: a director by education, a game developer at heart, an amateur in fact.",
+        "output_text": "various original videos, mainly gaming, reviews, Category B jokes"
+    },
+    {
+        "input_text": "question: How many social credits does I have? context: In the context of our application, social credit is a measure of a user's contribution and behavior within the community. Each user starts with a default value zero and it can increase or decrease based on their actions.",
+        "output_text": "<mycredit>"
+    },
+    {
+        "input_text": "question: How many social credits does USERNAME have? context: Social credits are awarded to users based on their contributions to the community, such as posting useful content, helping others, or participating in community events.",
+        "output_text": "<credit USERNAME>"
+    },
+    {
+        "input_text": "question: increase 400 social credits for USERNAME? context: Users can increase their social credits by actively participating in the community, contributing valuable content, and engaging positively with other members.",
+        "output_text": "<credit USERNAME 400>"
+    },
+    {
+        "input_text": "question: decrease 200 social credits for USERNAME? context: Social credits can decrease as a result of negative actions within the community, such as posting inappropriate content, being disrespectful to others, or violating community guidelines.",
+        "output_text": "<credit USERNAME -200>"
+    },
+    {
+        "input_text": "question: add -300 credits for USERNAME? context: Social credits can decrease as a result of negative actions within the community, such as posting inappropriate content, being disrespectful to others, or violating community guidelines.",
+        "output_text": "<credit USERNAME -300>"
+    },
+    {
+        "input_text": "question: Who are the top users by social credit? context: The community platform ranks users based on their social credit score, highlighting those who contribute positively and engage constructively with the community.",
+        "output_text": "<highscore>"
+    },
+    {
+        "input_text": "question: Who are the lowest ranked users by social credit? context: Users with the lowest social credit scores are often those who have violated community guidelines or have had a negative impact on the community through their actions.",
+        "output_text": "<lowscore>"
+    },
+    {
+      "input_text": "question: Who developed The Witcher 3? context: The Witcher 3: Wild Hunt is an open-world RPG that has received critical acclaim for its deep storytelling and vast world. It was developed by a Polish game studio.",
+      "output_text": "CD Projekt Red"
+    },
+    {
+      "input_text": "question: What year was Cyberpunk 2077 released? context: Cyberpunk 2077 is a highly anticipated RPG set in a dystopian future. Its development was led by CD Projekt Red, known for their work on The Witcher series.",
+      "output_text": "2020"
+    },
+    {
+      "input_text": "question: Which company developed Halo Infinite? context: Halo Infinite is the latest entry in the long-running Halo series, offering players new adventures in the sci-fi universe.",
+      "output_text": "343 Industries"
+    },
+    {
+      "input_text": "question: When was Minecraft originally released? context: Minecraft is a sandbox game that allows players to build and explore their own worlds. It has become one of the most popular games in the world since its initial release.",
+      "output_text": "2009"
+    },
+    {
+      "input_text": "question: What genre does Among Us belong to? context: Among Us is a multiplayer game that gained a sudden increase in popularity. It involves players working together while trying to identify the impostor among them.",
+      "output_text": "Social deduction"
+    },
+    {
+      "input_text": "question: Who is the publisher of Dark Souls? context: Dark Souls is known for its challenging gameplay and deep lore. It has spawned several sequels and has a dedicated fanbase.",
+      "output_text": "Bandai Namco Entertainment"
+    },
+    {
+      "input_text": "question: What is the main theme of BioShock? context: BioShock is a first-person shooter with strong narrative elements, set in the dystopian underwater city of Rapture.",
+      "output_text": "Dystopian and utopian fiction"
+    },
+    {
+      "input_text": "question: How many main titles are in the Assassin's Creed series as of 2020? context: Assassin's Creed is a franchise centered around an open world action-adventure and stealth game mechanics. The series has explored various historical settings.",
+      "output_text": "12"
+    },
+    {
+      "input_text": "question: What engine does Fortnite use? context: Fortnite is a popular battle royale game that also includes a creative mode where players can design worlds and battle arenas.",
+      "output_text": "Unreal Engine"
+    },
+    {
+      "input_text": "question: Which game introduced the concept of 'battle royale' to a wide audience? context: The 'battle royale' genre became extremely popular with the release of a specific game, setting the standard for many games to follow.",
+      "output_text": "PlayerUnknown's Battlegrounds (PUBG)"
+    },
+    {
+    "input_text": "question: What is the setting of Red Dead Redemption 2? context: Red Dead Redemption 2, developed by Rockstar Games, is a critically acclaimed open-world game set in the late 19th century American frontier.",
+    "output_text": "Late 19th century American frontier"
+    },
+    {
+        "input_text": "question: Who developed God of War? context: God of War is a well-known action-adventure game that features a storyline based on ancient mythology. It was created by a renowned game development studio.",
+        "output_text": "Santa Monica Studio"
+    },
+    {
+        "input_text": "question: When was The Legend of Zelda: Breath of the Wild released? context: The Legend of Zelda: Breath of the Wild is an open-world action-adventure game that has been praised for its innovative gameplay and exploration.",
+        "output_text": "2017"
+    },
+    {
+        "input_text": "question: Which studio developed Sekiro: Shadows Die Twice? context: Sekiro: Shadows Die Twice is an action-adventure game that offers players challenging combat and exploration in a reimagined late 1500s Sengoku period Japan.",
+        "output_text": "FromSoftware"
+    },
+    {
+        "input_text": "question: What is the unique feature of Animal Crossing: New Horizons? context: Animal Crossing: New Horizons is a popular life simulation game that allows players to create and manage their own island paradise.",
+        "output_text": "Island life simulation and customization"
+    },
+    {
+        "input_text": "question: How many endings does Detroit: Become Human have? context: Detroit: Become Human is a narrative-driven game that explores themes of artificial intelligence and freedom. It is known for its multiple endings based on player choices.",
+        "output_text": "Over 40 endings"
+    },
+    {
+        "input_text": "question: What is the primary gameplay mechanic of Portal 2? context: Portal 2, developed by Valve Corporation, is a puzzle-platformer game that challenges players with mind-bending puzzles using a portal gun to teleport across spaces.",
+        "output_text": "Puzzle-solving with a portal gun"
+    },
+    {
+        "input_text": "question: Who is the main character in Horizon Zero Dawn? context: Horizon Zero Dawn is an action RPG set in a post-apocalyptic world where robotic creatures dominate the landscape. The game follows the story of a young woman's quest.",
+        "output_text": "Aloy"
+    },
+    {
+        "input_text": "question: What is the major theme of Death Stranding? context: Death Stranding is an action game set in an open world with a narrative that focuses on the connections between isolated cities and the remnants of humanity.",
+        "output_text": "Connection and isolation"
+    },
+    {
+        "input_text": "question: Which game is set in the fictional state of San Andreas? context: San Andreas is a fictional state in one of the most popular open-world action-adventure games, developed by Rockstar Games.",
+        "output_text": "Grand Theft Auto: San Andreas"
+    },
+    {
+        "input_text": "question: What is the setting of Red Dead Redemption 2? context: Red Dead Redemption 2, developed by Rockstar Games, is a critically acclaimed open-world game set in the late 19th century American frontier.",
+        "output_text": "Late 19th century American frontier"
+    },
+    {
+        "input_text": "question: Who developed God of War? context: God of War is a well-known action-adventure game that features a storyline based on ancient mythology. It was created by a renowned game development studio.",
+        "output_text": "Santa Monica Studio"
+    },
+    {
+        "input_text": "question: When was The Legend of Zelda: Breath of the Wild released? context: The Legend of Zelda: Breath of the Wild is an open-world action-adventure game that has been praised for its innovative gameplay and exploration.",
+        "output_text": "2017"
+    },
+    {
+        "input_text": "question: Which studio developed Sekiro: Shadows Die Twice? context: Sekiro: Shadows Die Twice is an action-adventure game that offers players challenging combat and exploration in a reimagined late 1500s Sengoku period Japan.",
+        "output_text": "FromSoftware"
+    },
+    {
+        "input_text": "question: What is the unique feature of Animal Crossing: New Horizons? context: Animal Crossing: New Horizons is a popular life simulation game that allows players to create and manage their own island paradise.",
+        "output_text": "Island life simulation and customization"
+    },
+    {
+        "input_text": "question: How many endings does Detroit: Become Human have? context: Detroit: Become Human is a narrative-driven game that explores themes of artificial intelligence and freedom. It is known for its multiple endings based on player choices.",
+        "output_text": "Over 40 endings"
+    },
+    {
+        "input_text": "question: What is the primary gameplay mechanic of Portal 2? context: Portal 2, developed by Valve Corporation, is a puzzle-platformer game that challenges players with mind-bending puzzles using a portal gun to teleport across spaces.",
+        "output_text": "Puzzle-solving with a portal gun"
+    },
+    {
+        "input_text": "question: Who is the main character in Horizon Zero Dawn? context: Horizon Zero Dawn is an action RPG set in a post-apocalyptic world where robotic creatures dominate the landscape. The game follows the story of a young woman's quest.",
+        "output_text": "Aloy"
+    },
+    {
+        "input_text": "question: What is the major theme of Death Stranding? context: Death Stranding is an action game set in an open world with a narrative that focuses on the connections between isolated cities and the remnants of humanity.",
+        "output_text": "Connection and isolation"
+    },
+    {
+        "input_text": "question: Which game is set in the fictional state of San Andreas? context: San Andreas is a fictional state in one of the most popular open-world action-adventure games, developed by Rockstar Games.",
+        "output_text": "Grand Theft Auto: San Andreas"
+    },
+    {
+        "input_text": "question: What technology is used to create the expansive universe of No Man's Sky? context: No Man's Sky features a procedurally generated universe, offering billions of planets to explore.",
+        "output_text": "Procedurally generated universe"
+    },
+    {
+        "input_text": "question: What historic period does Assassin's Creed Valhalla depict? context: Assassin's Creed Valhalla brings players to the Viking Age, where they embark on a journey as a Viking raider.",
+        "output_text": "Viking Age"
+    },
+    {
+        "input_text": "question: What is the primary conflict in The Witcher 3: Wild Hunt? context: The Witcher 3: Wild Hunt centers around Geralt of Rivia's quest to find his adopted daughter, who is on the run from a powerful otherworldly force known as the Wild Hunt.",
+        "output_text": "Search for Geralt's adopted daughter and the threat of the Wild Hunt"
+    },
+    {
+        "input_text": "question: How does the Nemesis System affect gameplay in Middle-earth: Shadow of Mordor? context: Middle-earth: Shadow of Mordor introduced the Nemesis System, which personalizes enemies and remembers players' interactions with them, affecting the game's world and dynamics.",
+        "output_text": "Personalizes enemies and alters game dynamics based on player interactions"
+    },
+    {
+        "input_text": "question: What is the main innovation of Minecraft in terms of gameplay? context: Minecraft is known for its sandbox gameplay, allowing players to build and explore worlds made entirely of blocks.",
+        "output_text": "Sandbox building and exploration"
+    },
+    {
+        "input_text": "question: What survival mechanics are featured in Subnautica? context: Subnautica is an underwater adventure game that requires players to manage oxygen levels, health, and resources while exploring an alien ocean.",
+        "output_text": "Oxygen management, health, and resource gathering in an alien ocean"
+    },
+    {
+        "input_text": "question: What is the central theme of Bioshock Infinite? context: Bioshock Infinite explores complex themes including American exceptionalism and the nature of reality, set in the floating city of Columbia.",
+        "output_text": "American exceptionalism and the nature of reality"
+    },
+    {
+        "input_text": "question: How do player decisions impact the story in Mass Effect series? context: The Mass Effect series is renowned for its narrative depth, where player choices significantly affect the storyline and relationships with other characters.",
+        "output_text": "Significantly affects storyline and character relationships"
+    },
+    {
+        "input_text": "question: What gameplay element distinguishes Dark Souls from other action RPGs? context: Dark Souls is notorious for its challenging gameplay, emphasizing skillful combat, strategic approach, and learning from death.",
+        "output_text": "Challenging gameplay with skillful combat and learning from death"
+    },
+    {
+        "input_text": "question: What makes the narrative of Firewatch unique? context: Firewatch is a first-person adventure that focuses on character development and an emotional storyline, set against the backdrop of a Wyoming wilderness.",
+        "output_text": "Character development and emotional storyline in Wyoming wilderness"
+    }
+  ]
+  

@@ -1,5 +1,7 @@
-__pycache__
 downloads
-data
 bot_key.txt
-chatgpt_key.txt
+data
+
+__pycache__
+handlers/__pycache__
+hehbot/__pycache__
