@@ -9,7 +9,7 @@ sys.path.append(str(Path(__file__).parent.parent / 'hehbot'))
 from client import repo_user
 from client import Person
 
-from adminc import repo_staff
+from hehbot.admin import repo_staff
 
 class BotCommand:
     BOT_NAME = 'hehabot_bot'
@@ -97,9 +97,11 @@ class BotCommand:
         return len(pattern.findall(text))
 
     @staticmethod
-    def get_commands_description():
+    def get_commands_description(include_nothing: bool = False):
         descriptions = []
         for cls in BotCommand.__subclasses__():
+            if cls.command_name() == 'nothing' and not include_nothing:
+                continue
             descriptions.append(f"/{cls.command_name()} - {cls.description}")
         return "\n".join(descriptions)
     
@@ -123,9 +125,11 @@ class SetCreditCommand(BotCommand):
 
         p = repo_user.by_name(result[0])
         if p:
-            if result[1].isnumeric():
-                repo_user.update_score(p.id , p.score + int(result[1]))
-            else:
+            try:
+                score_increment = int(result[1])  # Спробуйте конвертувати рядок в ціле число
+                repo_user.update_score(p.id, p.score + score_increment)
+            except ValueError:
+                # Якщо конвертація не вдалась, значить рядок не є коректним цілим числом
                 return self.execute_stopped(f'через неправильний формат числа кредитів: "{result[1]}"')
         else:
             return self.execute_stopped(f'користувача {result[0]} не знайдено')
@@ -193,26 +197,6 @@ class DateCommand(BotCommand):
         date_str = f'Зараз час: {now.strftime('%Y-%m-%d %H:%M:%S')}'
         return self.execute_finished(date_str)
     
-class AboutCommand(BotCommand):
-    description = "Виводить список всіх можливих запитів."
-
-    @classmethod
-    def command_name(cls) -> str:
-        return "about"
-
-    def execute(self, person, args):
-        return BotCommand.get_commands_description()
-    
-class NothingCommand(BotCommand):
-    description = "Команда, якщо немає чіткої команди, яку виконувати."
-
-    @classmethod
-    def command_name(cls) -> str:
-        return "nothing"
-
-    def execute(self, person, args):
-        return ''
-        
 
 # Ініціалізація команд
 mycredit_command = MyCreditCommand()
@@ -220,4 +204,3 @@ highscore_command = BestCommand()
 lowscore_command = BaffleCommand()
 date_command = DateCommand()
 credit_command = SetCreditCommand()
-about_command = AboutCommand()
