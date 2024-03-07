@@ -4,18 +4,23 @@ from functools import singledispatchmethod
 
 from hehbot.client import Person, repo_user
 
-async def get_history(group_id: int, limit: int = 10) -> tuple:
+async def get_history(group_id: int, limit: int = 10) -> list:
     msgs = repo_msg.get_all_messages_by_group(group_id, limit)
     
     history = []
     for message in msgs:
         person = repo_user.by_number(message.user_number)
-        name = '' if person.number == -2 else person.name
+        role = 'assistant' if person.number == -2 else 'user'
+        name = 'Кайфо-Суддя' if person.number == -2 else person.name
 
         if name and message.text:
-            history.append(f"{name}{': ' if name else ''}{message.text}")
+            # Формування повідомлення у відповідному форматі
+            history.append({"role": role, "content": f"{name}{': ' if name else ''}{message.text}"})
 
-    return history[::-1]  # Повертаємо кортеж, з інвертованим порядком, щоб найновіші повідомлення були останніми
+    # Перевертаємо порядок повідомлень, щоб найновіші були останніми
+    history = history[::-1]
+
+    return history
 
 class DiscordMessage:
     def __init__(self) -> None:

@@ -147,7 +147,7 @@ class PersonRepository(IPersonRepository):
             return Person(id=row[2], name=row[1], number=row[0], score=row[3], cooldown=row[4])
         return None
     
-    def by_name(self, name: str) -> Person:
+    def by_name(self, name: str) -> Person | None:
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
         cursor.execute('SELECT number, name, id, score, cooldown FROM person WHERE name = ?', (name,))
