@@ -2,6 +2,7 @@ import re
 import sys
 import json
 import hehbot.gpt as gpt
+import aiogram
 
 from pathlib import Path
 from hehbot.embedding import get_embedding_async
@@ -30,7 +31,7 @@ class BotCommand:
         raise NotImplementedError("This method should be implemented by subclasses.")
     
     @classmethod
-    def execute(self, person, args, by_str: str = None) -> str:
+    async def execute(self, msg: aiogram.types.Message, args, by_str: str = None) -> str:
         raise NotImplementedError("This method should be implemented by subclasses.")
     
     @classmethod
@@ -78,7 +79,7 @@ class BotCommand:
             
 
     @staticmethod
-    def process_text(person, text) -> str:
+    async def cmd_by_text(person, text) -> str:
         # Шукаємо всі згадки команд у тексті
         pattern = re.compile(r"/(\w+)(?:@(\w+))?\s*(.*)")
 
@@ -93,7 +94,7 @@ class BotCommand:
 
             if command:
                 # Виконуємо команду і замінюємо шаблон на результат
-                result = command.execute(person, args.strip())  # Припускаємо, що команда визначена як функція
+                result = await command.execute(person, args.strip())  # Припускаємо, що команда визначена як функція
                 text = text.replace(match.group(), result, 1)
                 break
             else:
@@ -111,10 +112,21 @@ class BotCommand:
 
     @staticmethod
     def get_commands_description():
-        descriptions = []
+        commands_dict = {}
         for cls in BotCommand.__subclasses__():
-            descriptions.append(f"/{cls.command_name()} - {cls.description}")
+            command_name = cls.command_name()
+            # Перевірка, чи вже існує запис у словнику, щоб уникнути дублів
+            if command_name not in commands_dict:
+                commands_dict[command_name] = cls.description
+        
+        # Сортування команд за назвою для забезпечення визначеного порядку
+        sorted_commands = sorted(commands_dict.items(), key=lambda item: item[0])
+        
+        # Формування списку описів команд
+        descriptions = [f"/{command} - {description}" for command, description in sorted_commands]
         return descriptions
+
+
     
 
     # embeddings
@@ -151,17 +163,17 @@ class BotCommand:
     
     @staticmethod
     def save_embeddings_to_file(embeddings_dict) -> None:
-        with open('data/emb_com.json', 'w') as file:
+        with open('data/embeddings.json', 'w') as file:
             json.dump(embeddings_dict, file)
 
     @staticmethod
     def load_embeddings_from_file() -> dict:
         try:
-            with open('data/emb_com.json', 'r') as file:
+            with open('data/embeddings.json', 'r') as file:
                 embeddings_dict = json.load(file)
                 return embeddings_dict
         except FileNotFoundError:
-            print("Файл не знайдено. Спочатку згенеруйте embeddings.")
+            print("Файлу з embeddings не знайдено. Спочатку генерую embeddings.")
             return {}
     
     @classmethod 
@@ -182,7 +194,7 @@ class BotCommand:
                 distance = cosine(embedding1, embedding2)
                 similarity = 1 - distance
                 print(f"Команда: {subclass.command_name()}, Схожість: {similarity:.2f}")  # Виводимо назву команди та схожість
-                if similarity > max_similarity and similarity >= 0.2:  # Перевіряємо поріг схожості
+                if similarity > max_similarity and similarity >= 0.25:  # Перевіряємо поріг схожості
                     max_similarity = similarity
                     most_similar = subclass
 

@@ -3,3 +3,4 @@ aiogram==3.3.0
 requests==2.31.0
 httpx==0.26.0
 openai
+pillow

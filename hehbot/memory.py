@@ -29,35 +29,40 @@ class DiscordMessage:
         self.id = -1
 
 class ChatMessage:
-    @singledispatchmethod
-    def __init__(self, msg):
-        # Ця версія __init__ буде викликана, якщо не знайдено підходящого перевантаження
-        raise NotImplementedError("Cannot create ChatMessage with type", type(msg))
+    def __init__(self, text, date, tg_group, tg, user_number):
+        self.text = text
+        self.date = date
+        self.tg_group = tg_group
+        self.tg = tg
+        self.user_number = user_number
 
-    @__init__.register(aiogram.types.Message)
-    def _from_telegram(self, msg: aiogram.types.Message):
-        # Ініціалізація зі Telegram
-        self.text = msg.text
-        self.date = msg.date
-        self.tg_group = msg.chat.id
-        self.tg = msg.from_user.id
-        
-        n = repo_user.by_tg_message(msg).number
-        self.user_number = n if n else -1
+    @classmethod
+    async def from_telegram(cls, msg: aiogram.types.Message):
+        # Асинхронна ініціалізація з Telegram
+        text = msg.text
+        date = msg.date
+        tg_group = msg.chat.id
+        tg = msg.from_user.id
+        user = await repo_user.by_tg_message(msg, update=False)
+        user_number = user.number if user else -1
 
-    @__init__.register(DiscordMessage)
-    def _from_discord(self, msg: DiscordMessage):
+        return cls(text, date, tg_group, tg, user_number)
+
+    @classmethod
+    def from_discord(cls, msg: DiscordMessage):
         # Ініціалізація з Discord
-        pass
-    
-    @__init__.register(dict)
-    def _from_dict(self, msg: dict):
-        # Ініціалізація з словнику
-        self.text = msg.get('text')
-        self.date = datetime.now()
-        self.tg = msg.get('tg')
-        self.user_number = msg.get('number')
-        self.tg_group = msg.get('tg_group')
+        pass  # Ваш код для ініціалізації з Discord
+
+    @classmethod
+    def from_dict(cls, msg: dict):
+        # Ініціалізація зі словника
+        text = msg.get('text')
+        date = datetime.now()
+        tg = msg.get('tg')
+        user_number = msg.get('number', -1)
+        tg_group = msg.get('tg_group')
+
+        return cls(text, date, tg_group, tg, user_number)
 
 
     
@@ -111,7 +116,7 @@ class ChatMessageRepository:
                     'number': row[1],
                     'tg': None  # Тут можна встановити відповідне значення, якщо воно доступне
                 }
-                messages.append(ChatMessage(msg_dict))
+                messages.append(ChatMessage.from_dict(msg_dict))
             return messages
 
     def get_all_messages_by_group(self, group_id: int, limit: int = 10) -> list[ChatMessage]:
@@ -131,7 +136,7 @@ class ChatMessageRepository:
                     'number': row[0],
                     'tg': None
                 }
-                messages.append(ChatMessage(msg_dict))
+                messages.append(ChatMessage.from_dict(msg_dict))
             return messages
         
 

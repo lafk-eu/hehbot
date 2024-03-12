@@ -1,4 +1,4 @@
-from mbot import dp, bot
+from hehbot import bot, dp
 from chatting import *
 
 # Головна асинхронна функція для запуску бота

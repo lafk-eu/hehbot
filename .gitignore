@@ -2,6 +2,7 @@ downloads
 bot_key.txt
 chatgpt_key.txt
 data
+img/credits
 
 __pycache__
 handlers/__pycache__
