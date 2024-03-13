@@ -13,46 +13,61 @@ from time import sleep
 
 from google.api_core.exceptions import ResourceExhausted
 
-allowed_chats = [-4139370527, -1001947307140, 788237639]
+allowed_chats = [-1002131963990, 788237639]
 command_said = False
 
-async def do_command(person: Person, msg: types.Message) -> ChatMessage | None:
+async def get_mentioned_user(msg: types.Message):
+    if msg.reply_to_message:
+        if msg.reply_to_message.from_user:
+            if msg.reply_to_message.from_user.username:
+                return f' (${msg.reply_to_message.from_user.username})'
+    return ''
+
+async def do_command(msg: types.Message) -> ChatMessage | None:
     # process user's text if has commands
 
-    if BotCommand.count_commands(msg.text) == 1 and msg.text.startswith('/'):
-        cmd_result = BotCommand.cmd_by_text(person, msg.text)
+    if BotCommand.count_commands(msg.text) == 1:
+        cmd_result = await BotCommand.cmd_by_text(msg, msg.text + await get_mentioned_user(msg))
         if cmd_result:
             m = await ChatMessage.from_telegram(msg)
             m.text = cmd_result
-            repo_msg.add_message(m)
+            await repo_msg.add_message(m)
             return m
     
     return None
 
+async def send_group_invite(chat_id: int):
+    # Отримання запрошувального посилання
+    invite_link = await bot.export_chat_invite_link(-1002131963990)#-1002131963990
+
+    # Відправлення запрошувального посилання користувачу
+
+    await bot.send_message(chat_id, f"Привіт! Приєднуйся до нашої групи за посиланням: {invite_link}")  
+
+
 
 @dp.message()
 async def handler_filter_message(msg: types.Message) -> None:
-    global command_said
-    async with ChatActionSender.typing(msg.chat.id, bot):
-        # person create or get
-        person = await verify_user(msg)
-        if not person:
-            return # person was notified
-        
-        print('cnota')
 
+    # person create or update and get
+    person = await verify_user(msg)
+    if not person:
+        return # person was notified
+
+    if str(msg.text).startswith('/'):
+        cmd_msg = await do_command(msg)
+        if cmd_msg:
+            await msg.reply(cmd_msg.text)    
+        return
+    
+    repo_user.delete(-2)
+
+    async with ChatActionSender.typing(msg.chat.id, bot):
         # find command by AI and send if True
         cmd = await BotCommand.compare_async(msg.text) 
 
-        # save user message
-        #repo_msg.add_message(ChatMessage(msg))
-
-        #if BotCommand.count_commands(text) > 0:
-        #    command_said = True
-        #else:
-        #    command_said = False
         if cmd:
-            execution = await cmd.execute(msg, '', msg.text)
+            execution = await cmd.execute(msg, '', msg.text + await get_mentioned_user(msg))
             if execution:
                 await msg.answer(execution)
 
@@ -76,17 +91,20 @@ async def verify_user(msg: types.Message) -> Person | None:
 
     if msg.reply_to_message is not None and msg.reply_to_message.from_user.id == bot.id:
         pass
-    elif msg.text and str(msg.text).startswith('суд'):
+    elif msg.text and str(msg.text).startswith('суд') or str(msg.text).startswith('/'):
         pass
     else:
         return None
-
-    # ignore rogulyaky group
-    #if msg.chat.id == -1001947307140:
-    #    return None
+    
+    # chat id in whitelist
+    if msg.chat.id not in allowed_chats:
+        await msg.answer("Цей чат не зареєстрований в системі.")
+        print(f'намагалися писати в чаті: {msg.chat.id}')
+        return None
 
     # message has text
-    if not msg.text:
+    if len(str(msg.text)) > 100:
+        await msg.answer("Я не читаю повідомлення в яких більше 8 літер.")
         return None
 
     # person: create or update
@@ -100,11 +118,5 @@ async def verify_user(msg: types.Message) -> Person | None:
     # update user info in data base
     u = msg.from_user
     await repo_user.update_person(u.id, u.full_name, await get_avatar_id_async(u.id), u.username)
-
-    # chat id in whitelist
-    if msg.chat.id not in allowed_chats:
-        await msg.answer("Цей чат не зареєстрований в системі.")
-        print(f'намагалися писати в чаті: {msg.chat.id}')
-        return None
     
     return person

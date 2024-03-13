@@ -1,4 +1,4 @@
-from PIL import Image, ImageDraw, ImageFont, ImageEnhance
+from PIL import Image, ImageDraw, ImageFont, ImageEnhance, ImageFilter
 import numpy as np
 import aiogram, asyncio
 from io import BytesIO
@@ -15,7 +15,7 @@ async def get_dominant_color_async(image_bytes, brightness_adjustment=False) -> 
     async def blocking_operations(img):
         if brightness_adjustment:
             img = await adjust_brightness(img, 0.6)  # Зменшуємо яскравість на 40%
-        img = img.resize((100, 100))
+        img = img.resize((140, 140))
         img = img.convert('RGB')
 
         pixels = np.array(img)
@@ -87,7 +87,7 @@ async def download_profile_photo_async(person) -> BytesIO | None:
     return bytes_io
 
 async def get_credit_image_async(person):
-    output_path = f"img\\credits\\{person.id}.jpg"
+    output_path = f"img/credits/{str(person.id)}.jpeg"
     if os.path.exists(output_path):
         # Якщо зображення існує, повертаємо шлях
         return output_path
@@ -98,7 +98,7 @@ async def get_credit_image_async(person):
 async def create_credit_image_async(person_object) -> str:
     # Встановлення розмірів зображення
     image_width = 600
-    image_height = 120
+    image_height = 140
 
     # Виконуємо блокуючі операції з PIL в окремому потоці
     def create_image(person, avatar: BytesIO, dominant_color: tuple[int, int, int]):
@@ -107,8 +107,8 @@ async def create_credit_image_async(person_object) -> str:
         draw = ImageDraw.Draw(image)
 
         # Відкриття та вставка аватара
-        avatar = Image.open(avatar).resize((100, 100))
-        image.paste(avatar, (10, 10))  # Вставка зліва зверху
+        avatar = Image.open(avatar).resize((140, 140))
+        image.paste(avatar, (0, 0))  # Вставка зліва зверху
 
         # Налаштування шрифту
         font_path = "font/DejaVuSans.ttf"
@@ -121,20 +121,24 @@ async def create_credit_image_async(person_object) -> str:
 
         # Додавання інформації про користувача
         balance_text = f"Соціальних кредитів: {person.score}"
-        draw.text((120, 70), balance_text, fill="white", font=font)
-        draw.text((120, 10), person.fullname, fill="white", font=font)
-        draw.text((120, 40), '@'+person.name, fill="grey", font=grey_font)
+        draw.text((160, 80), balance_text, fill="white", font=font)
+        draw.text((160, 10), person.fullname, fill="white", font=font)
+        draw.text((160, 40), '@'+person.name, fill="grey", font=grey_font)
 
         # Збереження зображення
-        output_path = f"img\\credits\\{person.id}.jpg"
-        image.save(output_path, format='PNG')
+        output_path = f"img/credits/{str(person.id)}.jpeg"
+        image.save(output_path, format='JPEG')
 
         return output_path
     
     ava = await download_profile_photo_async(person_object)
     color = await get_dominant_color_async(ava)
-    print('color: ', color)
 
     output_path = await asyncio.to_thread(create_image, person_object, ava, color)
     print('generated user image')
     return output_path
+
+async def send_credit_image(person_object, chat_id: int):
+    photo = await get_credit_image_async(person_object)
+    await bot.send_photo(chat_id, aiogram.types.FSInputFile(photo))
+    return None

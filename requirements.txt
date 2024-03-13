@@ -4,3 +4,4 @@ requests==2.31.0
 httpx==0.26.0
 openai
 pillow
+aiosqlite

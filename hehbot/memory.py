@@ -1,4 +1,4 @@
-import sqlite3, aiogram
+import sqlite3, aiogram, aiosqlite
 from datetime import datetime
 from functools import singledispatchmethod
 
@@ -10,7 +10,7 @@ async def get_history(group_id: int, limit: int = 10) -> list:
     history = []
     for message in msgs:
         person = repo_user.by_number(message.user_number)
-        role = 'assistant' if person.number == -2 else 'user'
+        role = 'assistant' if person.number == -1 else 'user'
         name = 'Кайфо-Суддя' if person.number == -2 else person.name
 
         if name and message.text:
@@ -44,7 +44,7 @@ class ChatMessage:
         tg_group = msg.chat.id
         tg = msg.from_user.id
         user = await repo_user.by_tg_message(msg, update=False)
-        user_number = user.number if user else -1
+        user_number = user.number if user else 0
 
         return cls(text, date, tg_group, tg, user_number)
 
@@ -59,7 +59,7 @@ class ChatMessage:
         text = msg.get('text')
         date = datetime.now()
         tg = msg.get('tg')
-        user_number = msg.get('number', -1)
+        user_number = msg.get('number', 0)
         tg_group = msg.get('tg_group')
 
         return cls(text, date, tg_group, tg, user_number)
@@ -85,18 +85,18 @@ class ChatMessageRepository:
             ''')
             conn.commit()
 
-    def add_message(self, msg: ChatMessage):
-        with sqlite3.connect(self.db_path) as conn:
+    async def add_message(self, msg: ChatMessage):
+        async with aiosqlite.connect(self.db_path) as conn:
             n = msg.user_number
             tg = msg.tg if hasattr(msg, 'tg') else -1
             tg_group = msg.tg_group if hasattr(msg, 'tg_group') else -1
 
-            cursor = conn.cursor()
-            cursor.execute('''
-                INSERT INTO chat_messages (user_number, user_id, message_date, message_text, group_id)
-                VALUES (?, ?, ?, ?, ?)
-            ''', (n, tg, msg.date, msg.text, tg_group))
-            conn.commit()
+            async with conn.cursor() as cursor:
+                await cursor.execute('''
+                    INSERT INTO chat_messages (user_number, user_id, message_date, message_text, group_id)
+                    VALUES (?, ?, ?, ?, ?)
+                ''', (n, tg, msg.date, msg.text, tg_group))
+                await conn.commit()
 
     def get_last_messages_by_user(self, user_number: int, group_id: int, limit: int = 10) -> list[ChatMessage]:
         with sqlite3.connect(self.db_path) as conn:

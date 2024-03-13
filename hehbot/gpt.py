@@ -57,6 +57,6 @@ def say_about_channel():
 def say_to_db(tg_msg: aiogram.types.Message, text: str):
     m = ChatMessage.from_dict({'tg': bot.id, 
          'text': text,
-         'number': -2,
+         'number': -1,
          'tg_group': tg_msg.chat.id})
     repo_msg.add_message(m)

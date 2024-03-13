@@ -10,12 +10,14 @@ from hehbot.embedding import get_embedding_async
 from typing import Optional
 from scipy.spatial.distance import cosine
 
+import aiogram
+
 sys.path.append(str(Path(__file__).parent.parent / 'hehbot'))
 
 
 
 class BotCommand:
-    BOT_NAME = 'hehabot_bot'
+    BOT_NAME = 'PlatoJudge_bot'
     commands = {}
 
     def __init__(self):
@@ -53,16 +55,19 @@ class BotCommand:
         if hasattr(self, 'command_name'):
             return f'Запит "{self.command_name()}" не виконано: {response}.'
         return "Викликана неіснуюча команда."
-    
-    @staticmethod
-    def check_min_args(args: str, min_args: int, cls) -> str | list[str]:
-        args_list = args.strip().split()
 
-        if len(args_list) < min_args:
-            # Викликаємо метод для повернення повідомлення про помилку
-            return BotCommand.return_not_enough_args(cls, min_args)
-        else:
-            return args_list
+        
+    @staticmethod
+    async def get_args(args: str) -> list[str]:
+        # Розділяємо вхідний рядок на частини за пробілами
+        parts = args.split()
+
+        # Фільтруємо список, відкидаючи елемент, який починається на "/"
+        # Залишаємо усі інші елементи як аргументи
+        arguments = [part for part in parts if not part.startswith("/")]
+
+        return arguments
+
 
     @staticmethod
     def return_not_enough_args(cls, args_needed: int) -> str:
@@ -79,29 +84,25 @@ class BotCommand:
             
 
     @staticmethod
-    async def cmd_by_text(person, text) -> str:
-        # Шукаємо всі згадки команд у тексті
-        pattern = re.compile(r"/(\w+)(?:@(\w+))?\s*(.*)")
+    async def cmd_by_text(msg: aiogram.types.Message, text: str) -> str:
+        parts = msg.text.split()
+        
+        # Видалення імені бота з команди, якщо воно є
+        command_part = parts[0].split('@')[0]  # Видаляємо все, що йде після @
+        
+        # Видалення слеша з початку команди
+        command_name = command_part.lstrip('/')
+        
+        command = BotCommand.commands.get(command_name.strip())
 
-        matches = pattern.finditer(text)
+        if command:
+            print('args: ', await BotCommand.get_args(text))
+            print('text: ', text)
+            args = await BotCommand.get_args(text)
+            by_str = ' '.join(args)
+            return await command.execute(msg, args, by_str)  # Припускаємо, що команда визначена як функція
 
-        for match in matches:
-            command_name, bot_name, args = match.groups()
-            if bot_name and bot_name != BotCommand.BOT_NAME:  # перевіряємо, чи вказане ім'я бота відповідає поточному
-                continue
-
-            command = BotCommand.commands.get(command_name)
-
-            if command:
-                # Виконуємо команду і замінюємо шаблон на результат
-                result = await command.execute(person, args.strip())  # Припускаємо, що команда визначена як функція
-                text = text.replace(match.group(), result, 1)
-                break
-            else:
-                # Якщо команда не знайдена, вилучаємо шаблон з тексту
-                text = text.replace(match.group(), "", 1)
-
-        return text
+        return None
     
     # commands
 
@@ -117,7 +118,8 @@ class BotCommand:
             command_name = cls.command_name()
             # Перевірка, чи вже існує запис у словнику, щоб уникнути дублів
             if command_name not in commands_dict:
-                commands_dict[command_name] = cls.description
+                if hasattr(cls, 'description'):
+                    commands_dict[command_name] = cls.description
         
         # Сортування команд за назвою для забезпечення визначеного порядку
         sorted_commands = sorted(commands_dict.items(), key=lambda item: item[0])
@@ -142,7 +144,7 @@ class BotCommand:
 
         for subclass in cls.__subclasses__():
             cmd_name = subclass.command_name()
-            if not subclass.description:
+            if not hasattr(subclass, 'description'):
                 print(f'WARNING: BotCommand subclass {cmd_name} hasn\'t description.')
                 continue
             if cmd_name not in cached_embeddings:
@@ -182,7 +184,17 @@ class BotCommand:
         most_similar = None  # Початкове значення для найбільш схожого класу
         processed_subclasses = set()  # Для відстеження вже оброблених класів
 
-        embedding1 = await get_embedding_async(text)
+        def remove_court_and_username(text: str) -> str:
+            # Спочатку видаляємо слово "суд"
+            text_without_court = re.sub(r'\bсуд\b', '', text, flags=re.IGNORECASE)
+
+            # Потім шукаємо та видаляємо нікнейм
+            # Нікнейм визначаємо як слово, яке починається з "@" або "$"
+            text_final = re.sub(r'\b[@$][a-zA-Z_][a-zA-Z0-9_]*\b', '', text_without_court)
+
+            return text_final.strip()
+
+        embedding1 = await get_embedding_async(remove_court_and_username(text))
 
         for subclass in cls.__subclasses__():
             if subclass.__name__ in processed_subclasses:
@@ -193,8 +205,13 @@ class BotCommand:
                 embedding2 = subclass.embedding
                 distance = cosine(embedding1, embedding2)
                 similarity = 1 - distance
+
+                # Якщо дочірний клас є MyCreditCommand, збільшуємо схожість на 0.3
+                if subclass.__name__ == 'MyCreditCommand':
+                    similarity += 0.033
+
                 print(f"Команда: {subclass.command_name()}, Схожість: {similarity:.2f}")  # Виводимо назву команди та схожість
-                if similarity > max_similarity and similarity >= 0.25:  # Перевіряємо поріг схожості
+                if similarity > max_similarity and similarity >= 0.26:  # Перевіряємо поріг схожості
                     max_similarity = similarity
                     most_similar = subclass
 

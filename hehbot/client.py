@@ -77,6 +77,8 @@ class PersonRepository(IPersonRepository):
         
         fields_to_update = []
         values = []
+
+        old = repo_user.by_tg(id)
         
         if fullname is not None:
             fields_to_update.append("fullname = ?")
@@ -103,7 +105,7 @@ class PersonRepository(IPersonRepository):
         conn.close()
 
         # оновлюємо фотку кредитів користувача
-        if fullname or name or avatar or score:
+        if fullname != old.fullname or name != old.name or avatar != old.avatar or score != old.score:
             from hehbot.decoration import create_credit_image_async
             await create_credit_image_async(repo_user.by_tg(id))
 
