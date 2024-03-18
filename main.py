@@ -1,4 +1,5 @@
 from hehbot import bot, dp
+from hehbot.game import *
 from chatting import *
 
 # Головна асинхронна функція для запуску бота

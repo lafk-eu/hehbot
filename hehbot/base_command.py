@@ -145,7 +145,8 @@ class BotCommand:
         for subclass in cls.__subclasses__():
             cmd_name = subclass.command_name()
             if not hasattr(subclass, 'description'):
-                print(f'WARNING: BotCommand subclass {cmd_name} hasn\'t description.')
+                if not hasattr(subclass, 'ignore'):
+                    print(f'WARNING: BotCommand subclass {cmd_name} hasn\'t description.')
                 continue
             if cmd_name not in cached_embeddings:
                 # Якщо команда відсутня в кеші, генеруємо її embedding і позначаємо, що кеш потребує оновлення
@@ -186,7 +187,7 @@ class BotCommand:
 
         def remove_court_and_username(text: str) -> str:
             # Спочатку видаляємо слово "суд"
-            text_without_court = re.sub(r'\bсуд\b', '', text, flags=re.IGNORECASE)
+            text_without_court = re.sub(r'\bсуд,\s*|\bсуд\b', '', text, flags=re.IGNORECASE)
 
             # Потім шукаємо та видаляємо нікнейм
             # Нікнейм визначаємо як слово, яке починається з "@" або "$"

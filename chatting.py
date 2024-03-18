@@ -1,5 +1,5 @@
 from hehbot import bot, dp
-from hehbot.decoration import get_avatar_id_async
+from hehbot.decoration.credit_image import get_avatar_id_async
 
 from aiogram import types
 from aiogram.utils.chat_action import ChatActionSender
@@ -49,10 +49,13 @@ async def send_group_invite(chat_id: int):
 @dp.message()
 async def handler_filter_message(msg: types.Message) -> None:
 
+    
     # person create or update and get
     person = await verify_user(msg)
     if not person:
         return # person was notified
+    
+    #await msg.reply(await gpt.generate_text(msg))
 
     if str(msg.text).startswith('/'):
         cmd_msg = await do_command(msg)
@@ -114,9 +117,5 @@ async def verify_user(msg: types.Message) -> Person | None:
     if not person:
         await msg.answer("Ви не зареєстровані в системі. Я зареєструю самостійно, якщо у вашому профілі буде ім'я та нікнейм.")
         return None
-    
-    # update user info in data base
-    u = msg.from_user
-    await repo_user.update_person(u.id, u.full_name, await get_avatar_id_async(u.id), u.username)
     
     return person

@@ -1,6 +1,7 @@
 import sqlite3, aiogram, asyncio
 from abc import ABC, abstractmethod
 from typing import List
+from hehbot.admin import repo_staff
 
 import random
 
@@ -69,8 +70,6 @@ class PersonRepository(IPersonRepository):
         conn.commit()
         conn.close()
 
-        self.add_or_get_bot()
-
     async def update_person(self, id: int, fullname: str = None, avatar: str = None, name: str = None, score: int = None, cooldown: str = None):
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
@@ -79,58 +78,45 @@ class PersonRepository(IPersonRepository):
         values = []
 
         old = repo_user.by_tg(id)
+
+        is_credit_image_update = False
         
-        if fullname is not None:
+        if fullname is not None and old.fullname != fullname:
             fields_to_update.append("fullname = ?")
             values.append(fullname)
-        if avatar is not None:
+            is_credit_image_update = True
+        if avatar is not None and old.avatar != avatar:
             fields_to_update.append("avatar = ?")
             values.append(avatar)
-        if name is not None:
+            print(f'avatar: {avatar}, old.avatar: {old.avatar}')
+            is_credit_image_update = True
+        if name is not None and old.name != name:
             fields_to_update.append("name = ?")
             values.append(name)
-        if score is not None:
+            is_credit_image_update = True
+        if score is not None and old.score != score:
             fields_to_update.append("score = ?")
             values.append(score)
+            is_credit_image_update = True
+            print(f'score: {score}, old.score: {old.score}')
         if cooldown is not None:
             fields_to_update.append("cooldown = ?")
             values.append(cooldown)
         
         values.append(id) # ID для умови WHERE
         
-        update_stmt = f"UPDATE person SET {', '.join(fields_to_update)} WHERE id = ?"
-        cursor.execute(update_stmt, values)
-        
-        conn.commit()
+        if fields_to_update:
+            update_stmt = f"UPDATE person SET {', '.join(fields_to_update)} WHERE id = ?"
+            cursor.execute(update_stmt, values)
+            conn.commit()
+            
         conn.close()
 
         # оновлюємо фотку кредитів користувача
-        if fullname != old.fullname or name != old.name or avatar != old.avatar or score != old.score:
-            from hehbot.decoration import create_credit_image_async
+        if is_credit_image_update:
+            print('user update image')
+            from hehbot.decoration.credit_image import create_credit_image_async
             await create_credit_image_async(repo_user.by_tg(id))
-
-    def add_or_get_bot(self):
-        conn = sqlite3.connect(self.db_path)
-        cursor = conn.cursor()
-
-        # Спробуємо знайти персону з id = -2
-        cursor.execute('SELECT * FROM person WHERE id = -2')
-        bot = cursor.fetchone()
-
-        if bot is None:
-            # Якщо персона не знайдена, створюємо нову
-            cursor.execute('''
-                INSERT INTO person (number, fullname, avatar, name, id, score, cooldown)
-                VALUES (?, ?, ?, ?, ?, ?, ?)
-            ''', (-2, 'Assistent', None, 'Bot', -2, 0, ''))
-            conn.commit()
-
-            # Повертаємо новостворену персону
-            cursor.execute('SELECT * FROM person WHERE id = -2')
-            bot = cursor.fetchone()
-
-        conn.close()
-        return bot
 
     def add(self, person: Person) -> None:
         conn = sqlite3.connect(self.db_path)
@@ -148,7 +134,7 @@ class PersonRepository(IPersonRepository):
         if not p.username or not p.full_name:
             return None
         
-        from hehbot.decoration import get_avatar_id_async, create_credit_image_async
+        from hehbot.decoration.credit_image import get_avatar_id_async, create_credit_image_async
 
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
@@ -173,10 +159,10 @@ class PersonRepository(IPersonRepository):
                 fullname = p.full_name, 
                 avatar = await get_avatar_id_async(p.id), 
                 name = p.username,
-                score = 0,
+                score = 1000,
                 cooldown = '')
-            await create_credit_image_async(person)
             self.add(person)  # Викликаємо метод add для додавання нової персони
+            await create_credit_image_async(person)
         return person
 
     def by_tg(self, tg_id: int) -> Person:
@@ -216,6 +202,10 @@ class PersonRepository(IPersonRepository):
         cursor.execute('DELETE FROM person WHERE id = ?', (tg,))
         conn.commit()
         conn.close()
+
+        staff = repo_staff.get_by_id(tg)
+        if staff:
+            repo_staff.delete(tg)
 
     def with_lowest_scores(self, limit: int) -> List[Person]:
         conn = sqlite3.connect(self.db_path)
