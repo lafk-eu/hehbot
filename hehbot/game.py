@@ -19,9 +19,19 @@ def decode_slot_machine_value(value: int) -> list[str]:
 async def handle_slot_machine(msg: Message, slots: list[str]):
     person = repo_user.by_tg(msg.from_user.id)
     if person and not msg.is_automatic_forward and not msg.forward_origin:
-        result = await send_slot_machine(msg, slots)
-        if result:
-            await msg.reply(result)
+        try:
+            cooldowns = person.cooldown.split()
+        except:
+            cooldowns = None
+
+        if not cooldowns:
+            cooldowns = []
+
+        if not 'slots' in cooldowns:
+            result = await send_slot_machine(msg, slots)
+            if result:
+                await msg.reply(result)
+            await repo_user.update_person(id=person.id, cooldown='slots '+person.cooldown)
         
 
         #await repo_user.update_person(person.id, score=person.score + score_change)
