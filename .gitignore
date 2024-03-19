@@ -3,6 +3,9 @@ bot_key.txt
 chatgpt_key.txt
 data
 img/credits
+img/slot_machine/users
+img/highscore.jpeg
+img/lowscore.jpeg
 
 __pycache__
 handlers/__pycache__
