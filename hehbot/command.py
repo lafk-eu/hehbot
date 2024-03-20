@@ -66,9 +66,9 @@ class SetCreditCommand(BotCommand):
             target_msg = msg.reply_to_message
         
             if target_msg:
-                try:
-                    target = await repo_user.by_tg_message(msg)
-                except:
+                target = await repo_user.by_tg_message(target_msg)
+                
+                if not target:
                     return cls.execute_stopped(f'Щось пішло не так під час додавання {target_msg.from_user.full_name if target_msg.from_user else "(Не можу вимовити ім'я)"} в мою базу даних.')
             else:
                 return cls.execute_stopped(f'користувача {username} не знайдено в базі даних: можеш відповісти на його повідомлення щоб додати.')
@@ -98,7 +98,7 @@ class SetCreditCommand(BotCommand):
             if repo_staff.get_by_id(target.id):
                 return f'Не можна видавати сошіал кредити іншим інспекторам сошіал кредиту! 😡😡😡'
 
-        await send_changed_credit_image(repo_user.by_tg(target.id), amount, msg.chat.id)
+        await send_changed_credit_image(repo_user.by_tg(target.id), amount, msg)
         await repo_user.update_person(id=target.id, score=new_score)
 
         return None
@@ -117,7 +117,7 @@ class MyCreditCommand(BotCommand):
         if args:
             user = repo_user.by_name(find_username(args[0]))
             if user:
-                return await send_credit_image(user, msg.chat.id)
+                return await send_credit_image(user, msg)
             elif not by_str:  # Якщо не знайдено за аргументом і by_str не надано
                 return cls.execute_stopped(f'користувача {args[0]} не знайдено в базі даних')
 
@@ -129,18 +129,28 @@ class MyCreditCommand(BotCommand):
 
             name = find_username(by_str)
             if name:
-                user = repo_user.by_name(name)
-                if user:
-                    return await send_credit_image(user, msg.chat.id)
+                target = repo_user.by_name(name)
+                if target:
+                    return await send_credit_image(user, msg)
+                
                 else:
-                    return cls.execute_stopped('через неправильне або неіснуюче ім\'я')
+                    target_msg = msg.reply_to_message
+        
+                    if target_msg:
+                        target = await repo_user.by_tg_message(target_msg)
+                
+                        if not target:
+                            return cls.execute_stopped(f'Щось пішло не так під час додавання {target_msg.from_user.full_name if target_msg.from_user else "(Не можу вимовити ім'я)"} в мою базу даних.')
+                        return await send_credit_image(target, msg)
+                    else:
+                        return cls.execute_stopped(f'{name} не знайдено: можеш відповісти на його повідомлення щоб додати.')
 
         # Якщо не надано аргументів і by_str пустий, повертаємо кредити поточного користувача
         if not args:
             return await send_credit_image(repo_user.by_tg(msg.from_user.id), msg.chat.id)
 
         # Загальна відмова, якщо жоден з вище наведених випадків не спрацював
-        return cls.execute_stopped('Помилка у виконанні команди')
+        return cls.execute_stopped(f'Користувача {name if name else ''} не знайдено')
 
 
 class HighscoreCommand(BotCommand):
@@ -166,7 +176,7 @@ class HighscoreCommand(BotCommand):
         elif limit < 1:
             return 'Не можна менше одного користувача.'
 
-        await send_highscore_image(msg.chat.id, limit=limit)
+        await send_highscore_image(msg, limit=limit)
         return None
         #p_list = repo_user.with_highest_scores(10)
         #best_str = '\n'.join(f'{i + 1}. {p.name}: {p.score}' for i, p in enumerate(p_list))
@@ -194,7 +204,7 @@ class LowscoreCommand(BotCommand):
         elif limit < 1:
             return 'Не можна менше одного користувача.'
 
-        await send_lowscore_image(msg.chat.id, limit=limit)
+        await send_lowscore_image(msg, limit=limit)
         return None
     
 class DateCommand(BotCommand):

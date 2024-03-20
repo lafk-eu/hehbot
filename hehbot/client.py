@@ -126,7 +126,6 @@ class PersonRepository(IPersonRepository):
             VALUES (?, ?, ?, ?, ?, ?)
         ''', (person.fullname, person.avatar, person.name, person.id, person.score, person.cooldown))
         conn.commit()
-        person.number = cursor.lastrowid
         conn.close()
 
     async def by_tg_message(self, msg: aiogram.types.Message, update=True) -> Person | None:

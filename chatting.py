@@ -13,7 +13,7 @@ from time import sleep
 
 from google.api_core.exceptions import ResourceExhausted
 
-allowed_chats = [-1002131963990, 788237639, -1001909232100]
+allowed_chats = [-1002131963990, 788237639, -1001909232100, -1001568642353]
 command_said = False
 
 async def get_mentioned_user(msg: types.Message):
@@ -35,15 +35,6 @@ async def do_command(msg: types.Message) -> ChatMessage | None:
             return m
     
     return None
-
-async def send_group_invite(chat_id: int):
-    # Отримання запрошувального посилання
-    invite_link = await bot.export_chat_invite_link(-1002131963990)#-1002131963990
-
-    # Відправлення запрошувального посилання користувачу
-
-    await bot.send_message(chat_id, f"Привіт! Приєднуйся до нашої групи за посиланням: {invite_link}")  
-
 
 
 @dp.message()
@@ -92,10 +83,14 @@ async def generate_answer(msg: types.Message, command_said_before: bool = False)
 
 async def verify_user(msg: types.Message) -> Person | None:
 
-    if msg.reply_to_message is not None and msg.reply_to_message.from_user.id == bot.id:
-        pass
-    elif msg.text and str(msg.text).startswith('суд') or str(msg.text).startswith('/'):
-        pass
+    if msg.reply_to_message or msg.is_automatic_forward or msg.forward_from or msg.forward_from_message_id:
+        return None
+    
+    if msg.text and str(msg.text).lower().startswith('суд') or str(msg.text).startswith('/'):
+        # message has text
+        if len(str(msg.text)) > 100:
+            await msg.answer("Я не читаю повідомлення в яких більше 8 літер.")
+            return None
     else:
         return None
     
@@ -103,11 +98,6 @@ async def verify_user(msg: types.Message) -> Person | None:
     if msg.chat.id not in allowed_chats:
         await msg.answer("Цей чат не зареєстрований в системі.")
         print(f'намагалися писати в чаті: {msg.chat.id}')
-        return None
-
-    # message has text
-    if len(str(msg.text)) > 100:
-        await msg.answer("Я не читаю повідомлення в яких більше 8 літер.")
         return None
 
     # person: create or update
