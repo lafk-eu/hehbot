@@ -1,5 +1,5 @@
 from random import randint
-from hehbot import bot, repo_user, Person
+from hehbot import repo_user, Person
 import aiogram, asyncio
 from aiogram.enums import DiceEmoji
 from collections import Counter

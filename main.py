@@ -1,4 +1,4 @@
-from hehbot import bot, dp
+from mbot import bot, dp
 from hehbot.game import *
 from chatting import *
 

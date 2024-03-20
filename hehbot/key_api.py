@@ -6,7 +6,7 @@ class APIHolder:
         self.chatgpt = self.read_api_from_env("OPENAI_API")
 
     def read_api_from_env(self, env_variable):
-        return os.getenv(env_variable, "")
+        return os.getenv(env_variable)
     
 api = APIHolder()
     
