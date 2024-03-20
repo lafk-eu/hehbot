@@ -1,7 +1,8 @@
 from aiogram import Router, F
 from aiogram.enums import DiceEmoji
 from aiogram.types import Message
-from hehbot import dp, repo_user
+from hehbot import repo_user
+from mbot import dp
 import asyncio
 from hehbot.decoration.slot_machine import send_slot_machine, CASINO_EMOJI
 

@@ -4,7 +4,7 @@ from hehbot.memory import repo_msg, ChatMessage, get_history
 from hehbot.key_api import api
 from hehbot.client import repo_user
 from hehbot.command import BotCommand
-from hehbot import bot
+from mbot import bot
 
 from openai import OpenAIError
 from requests.exceptions import RequestException

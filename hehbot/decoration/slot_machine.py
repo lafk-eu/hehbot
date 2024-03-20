@@ -23,33 +23,27 @@ async def draw_slot_machine_image_async(user_id: int, reward: int, randomized_re
             color = (50, 200, 50)
 
         image_path = f"{slot_machine_path}{reward_str}.jpg"
-        base_image = Image.open(image_path).resize((320, 180))
+        base_image = Image.open(image_path)
         
         text = str(randomized_reward) if randomized_reward < 0 else '+' + str(randomized_reward)
         font_path = "font/impact.ttf"
-        frames, duration = 24, 1000 // 24
-        min_font_size, max_font_size = 24, 36
-        animated_frames = []
+        font_size = 128
         
-        outline_thickness, outline_color = 1, (0, 0, 0)
-        
-        for i in range(frames):
-            font_size = int(min_font_size + (max_font_size - min_font_size) * (0.5 + 0.5 * np.sin(np.pi * 2 * i / frames)))
-            frame = base_image.copy()
-            draw = ImageDraw.Draw(frame)
-            font = ImageFont.truetype(font_path, font_size)
-            text_width = draw.textlength(text, font=font)
-            text_position = ((frame.width - text_width) // 1.5, (frame.height - font_size) // 2.6)
+        outline_thickness, outline_color = 5, (0, 0, 0)
+      
+        draw = ImageDraw.Draw(base_image)
+        font = ImageFont.truetype(font_path, font_size)
+        text_width = draw.textlength(text, font=font)
+        text_position = ((base_image.width - text_width) // 1.5, (base_image.height - font_size) // 2.6)
 
-            for x in range(-outline_thickness, outline_thickness + 1):
-                for y in range(-outline_thickness, outline_thickness + 1):
-                    draw.text((text_position[0] + x, text_position[1] + y), text, font=font, fill=outline_color)
+        for x in range(-outline_thickness, outline_thickness + 1):
+            for y in range(-outline_thickness, outline_thickness + 1):
+                draw.text((text_position[0] + x, text_position[1] + y), text, font=font, fill=outline_color)
             
-            draw.text(text_position, text, font=font, fill=color)
-            animated_frames.append(frame)
+        draw.text(text_position, text, font=font, fill=color)
 
-        output_path = f"{slot_machine_path}users/{user_id}.gif"
-        animated_frames[0].save(output_path, save_all=True, append_images=animated_frames[1:], duration=duration, loop=0, format='GIF')
+        output_path = f"{slot_machine_path}users/{user_id}.jpeg"
+        base_image.save(output_path, format='JPEG', optimize=True)
 
         return output_path
 
@@ -134,7 +128,7 @@ async def send_slot_machine(msg: aiogram.types.Message, slots: list[str]):
         if score_change >= 250 or score_change <= -250:
             img_path = await draw_slot_machine_image_async(user.id, score_change, randomized_score)
             if img_path:
-                await msg.reply_animation(aiogram.types.FSInputFile(img_path), caption= 'Нова спроба завтра.')
+                await msg.reply_photo(aiogram.types.FSInputFile(img_path), caption= 'Нова спроба завтра.')
                 await repo_user.update_person(user.id, score=user.score + randomized_score)
                 return None
         await msg.reply(f'Отримано {randomized_score} соціальних кредитів за вашу гру! Нова спроба завтра.')

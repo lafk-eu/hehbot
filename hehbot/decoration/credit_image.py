@@ -3,7 +3,8 @@ import numpy as np
 import aiogram, asyncio
 from io import BytesIO
 import os
-from hehbot import bot, repo_user, Person
+from hehbot import repo_user, Person
+from mbot import bot
 
 async def adjust_brightness(image, factor):
     def blocking_adjust_brightness():

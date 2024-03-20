@@ -1,4 +1,4 @@
-from hehbot import bot, dp
+from mbot import bot, dp
 from hehbot.decoration.credit_image import get_avatar_id_async
 
 from aiogram import types
