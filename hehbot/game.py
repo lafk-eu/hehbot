@@ -18,7 +18,7 @@ def decode_slot_machine_value(value: int) -> list[str]:
     F.dice[F.emoji == DiceEmoji.SLOT_MACHINE].value.cast(decode_slot_machine_value).as_("slots")
 )
 async def handle_slot_machine(msg: Message, slots: list[str]):
-    person = repo_user.by_tg_message(msg)
+    person = await repo_user.by_tg_message(msg)
     if person and not msg.is_automatic_forward and not msg.forward_origin:
         try:
             cooldowns = person.cooldown.split()
