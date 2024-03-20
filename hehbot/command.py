@@ -63,7 +63,13 @@ class SetCreditCommand(BotCommand):
 
         target = repo_user.by_name(username)
         if not target:
-            return cls.execute_stopped(f'користувача {username} не знайдено в базі даних')
+            target_msg = msg.reply_to_message
+            if target_msg:
+                target = repo_user.by_tg_message(target_msg)
+                if not target:
+                    return cls.execute_stopped(f'Щось пішло не так під час додавання {username} в мою базу даних')
+            else:
+                return cls.execute_stopped(f'користувача {username} не знайдено в базі даних: можеш відповісти на його повідомлення щоб додати.')
 
         if amount:
             print('число: ', amount)

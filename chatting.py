@@ -13,7 +13,7 @@ from time import sleep
 
 from google.api_core.exceptions import ResourceExhausted
 
-allowed_chats = [-1002131963990, 788237639]
+allowed_chats = [-1002131963990, 788237639, -1001909232100]
 command_said = False
 
 async def get_mentioned_user(msg: types.Message):

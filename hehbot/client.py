@@ -208,17 +208,31 @@ class PersonRepository(IPersonRepository):
             repo_staff.delete(tg)
 
     def with_lowest_scores(self, limit: int) -> List[Person]:
+        excluded_names = ('llafk', 'GroupAnonymousBot', 'Channel_Bot')
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
-        cursor.execute('SELECT id FROM person ORDER BY score ASC LIMIT ?', (limit,))
+        # Виключення користувачів з певними іменами з результатів
+        cursor.execute('''
+            SELECT id FROM person 
+            WHERE name NOT IN (?, ?, ?)
+            ORDER BY score ASC 
+            LIMIT ?
+        ''', (*excluded_names, limit))
         rows = cursor.fetchall()
         conn.close()
         return [self.by_tg(row[0]) for row in rows]
 
     def with_highest_scores(self, limit: int) -> List[Person]:
+        excluded_names = ('llafk', 'GroupAnonymousBot', 'Channel_Bot')
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
-        cursor.execute('SELECT id FROM person ORDER BY score DESC LIMIT ?', (limit,))
+        # Виключення користувачів з певними іменами з результатів
+        cursor.execute('''
+            SELECT id FROM person 
+            WHERE name NOT IN (?, ?, ?)
+            ORDER BY score DESC 
+            LIMIT ?
+        ''', (*excluded_names, limit))
         rows = cursor.fetchall()
         conn.close()
         return [self.by_tg(row[0]) for row in rows]
