@@ -131,8 +131,6 @@ class PersonRepository(IPersonRepository):
 
     async def by_tg_message(self, msg: aiogram.types.Message, update=True) -> Person | None:
         p = msg.from_user
-        if not p.username or not p.full_name:
-            return None
         
         from hehbot.decoration.credit_image import get_avatar_id_async, create_credit_image_async
 

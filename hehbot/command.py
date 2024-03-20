@@ -1,4 +1,4 @@
-from hehbot.client import repo_user
+from hehbot.client import repo_user, Person
 from hehbot.admin import repo_staff, StaffPerson
 
 from hehbot.base_command import BotCommand
@@ -64,10 +64,12 @@ class SetCreditCommand(BotCommand):
         target = repo_user.by_name(username)
         if not target:
             target_msg = msg.reply_to_message
+        
             if target_msg:
-                target = repo_user.by_tg_message(target_msg)
-                if not target:
-                    return cls.execute_stopped(f'Щось пішло не так під час додавання {username} в мою базу даних')
+                try:
+                    target = await repo_user.by_tg_message(msg)
+                except:
+                    return cls.execute_stopped(f'Щось пішло не так під час додавання {target_msg.from_user.full_name if target_msg.from_user else "(Не можу вимовити ім'я)"} в мою базу даних.')
             else:
                 return cls.execute_stopped(f'користувача {username} не знайдено в базі даних: можеш відповісти на його повідомлення щоб додати.')
 
