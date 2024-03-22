@@ -13,8 +13,10 @@ from time import sleep
 
 from google.api_core.exceptions import ResourceExhausted
 
-allowed_chats = [-1002131963990, 788237639, -1001909232100, -1001568642353]
+allowed_chats = [-1002131963990, 788237639, -1001909232100, -1001568642353, -1001947307140]
 command_said = False
+
+user_message_times = {}
 
 async def get_mentioned_user(msg: types.Message):
     if msg.reply_to_message:
@@ -83,7 +85,7 @@ async def generate_answer(msg: types.Message, command_said_before: bool = False)
 
 async def verify_user(msg: types.Message) -> Person | None:
 
-    if msg.reply_to_message or msg.is_automatic_forward or msg.forward_from or msg.forward_from_message_id:
+    if msg.is_automatic_forward or msg.forward_from or msg.forward_from_message_id or msg.forward_origin:
         return None
     
     if msg.text and str(msg.text).lower().startswith('суд') or str(msg.text).startswith('/'):
@@ -107,5 +109,12 @@ async def verify_user(msg: types.Message) -> Person | None:
     if not person:
         await msg.answer("Ви не зареєстровані в системі. Я зареєструю самостійно, якщо у вашому профілі буде ім'я та нікнейм.")
         return None
+    
+    can_send = await repo_msg.can_send_message(person.number, msg.chat.id)
+    if not can_send:
+        await msg.reply("Без флуду, будь ласка.")
+        return None
+    
+    await repo_msg.add_message(ChatMessage(msg.text, msg.date, msg.chat.id, person.id, person.number))
     
     return person

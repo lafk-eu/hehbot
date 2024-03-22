@@ -2,11 +2,12 @@ import sqlite3, aiogram, asyncio
 from abc import ABC, abstractmethod
 from typing import List
 from hehbot.admin import repo_staff
+from enum import Enum
 
 import random
 
 class Person:
-    def __init__(self, id: int, fullname: str = '', avatar: str = '', name: str = '', number: int = -1, score: int = 0, cooldown: str = '') -> None:
+    def __init__(self, id: int, fullname: str = '', avatar: str = '', name: str = '', number: int = -1, score: int = 1000, cooldown: str = '') -> None:
         self.id = id
         self.fullname = fullname
         self.avatar = avatar
@@ -14,6 +15,41 @@ class Person:
         self.number = number
         self.score = score
         self.cooldown = cooldown
+
+class CooldownType(Enum):
+    SLOTS = 'slots'
+    BET = 'bet'
+
+class Cooldown:
+    def __init__(self, person: Person) -> None:
+        self.cooldowns = person.cooldown.split() if person.cooldown else []
+
+    async def get_cooldown(self, cooldown_type: CooldownType) -> str:
+        if cooldown_type == CooldownType.SLOTS:
+            return 'slots' if 'slots' in self.cooldowns else None
+        elif cooldown_type == CooldownType.BET:
+            for i in range(1, 4):
+                if f'bet{i}' in self.cooldowns:
+                    return f'bet{i}'
+            return None
+
+    async def update_cooldown(self, cooldown_type: CooldownType, usage_count: int) -> None:
+        cooldown_value = f'{cooldown_type.value}{"" if cooldown_type == CooldownType.SLOTS or usage_count == 1 else usage_count}'
+        # Видаляємо попередні кулдауни того ж типу
+        self.cooldowns = [cd for cd in self.cooldowns if not cd.startswith(cooldown_type.value)]
+        self.cooldowns.append(cooldown_value)
+
+    async def get_usage_count(self, cooldown_type: CooldownType) -> int:
+        for cooldown in self.cooldowns:
+            if cooldown.startswith(cooldown_type.value):
+                if cooldown_type == CooldownType.SLOTS:
+                    return 1
+                # Для BET визначаємо кількість використань
+                if cooldown_type == CooldownType.BET and len(cooldown) > 3:
+                    return int(cooldown[3:])
+                return 1
+        return 0
+    
 
 class IPersonRepository(ABC):
     @abstractmethod
@@ -241,6 +277,14 @@ class PersonRepository(IPersonRepository):
             UPDATE person
             SET cooldown = ''
         ''')
+        conn.commit()
+        conn.close()
+
+    async def update_cooldown(self, person_id: int, cooldown: Cooldown) -> None:
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+        cursor.execute('''UPDATE person SET cooldown = ? WHERE id = ?''', 
+        (' '.join(cooldown.cooldowns), person_id))
         conn.commit()
         conn.close()
     

@@ -1,17 +1,35 @@
-from hehbot.client import repo_user, Person
+from hehbot.client import repo_user, Person, CooldownType, Cooldown
 from hehbot.admin import repo_staff, StaffPerson
 
 from hehbot.base_command import BotCommand
 from datetime import datetime
 
 from hehbot.decoration.credit_image import send_credit_image, send_highscore_image, send_lowscore_image, send_changed_credit_image
-from mbot import bot
+from mbot import bot, dp
 
-import aiogram
+import aiogram, asyncio
+from aiogram.exceptions import TelegramAPIError, TelegramRetryAfter
+from aiogram.utils.markdown import hbold
+from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 import re
 
-def find_username(text: str) -> str:
+def safe_telegram_request(retry_seconds=5.0):
+    def decorator(func):
+        async def wrapper(*args, **kwargs):
+            while True:
+                try:
+                    return await func(*args, **kwargs)
+                except TelegramRetryAfter as e:
+                    print(f"Попередження: контроль за частотою запитів від Telegram, чекаємо {e.retry_after} секунди.")
+                    await asyncio.sleep(e.retry_after)
+                except TelegramAPIError as e:
+                    print(f"Помилка Telegram API: {e}")
+                    break  # or raise e to propagate the error after logging
+        return wrapper
+    return decorator
+
+def find_username(text: str) -> str | None:
     # Спочатку шукаємо ім'я, яке починається з "@" або "$"
     special_match = re.search(r'\b[@$][a-zA-Z_][a-zA-Z0-9_]*\b', text)
     if special_match:
@@ -39,6 +57,7 @@ def remove_english_words(text: str) -> str:
 
 class SetCreditCommand(BotCommand):
     description = "+300 соціальних кредитів"
+    info = "Видати кредити; потрібні нік та число."
 
     @classmethod
     def command_name(cls) -> str:
@@ -106,6 +125,7 @@ class SetCreditCommand(BotCommand):
 
 class MyCreditCommand(BotCommand):
     description = "Покажи/Скільки який баланс кредитів"
+    info = "Баланс; можна дізнатися чужий."
 
     @classmethod
     def command_name(cls) -> str:
@@ -131,7 +151,7 @@ class MyCreditCommand(BotCommand):
             if name:
                 target = repo_user.by_name(name)
                 if target:
-                    return await send_credit_image(user, msg)
+                    return await send_credit_image(target, msg)
                 
                 else:
                     target_msg = msg.reply_to_message
@@ -147,7 +167,7 @@ class MyCreditCommand(BotCommand):
 
         # Якщо не надано аргументів і by_str пустий, повертаємо кредити поточного користувача
         if not args:
-            return await send_credit_image(repo_user.by_tg(msg.from_user.id), msg.chat.id)
+            return await send_credit_image(repo_user.by_tg(msg.from_user.id), msg)
 
         # Загальна відмова, якщо жоден з вище наведених випадків не спрацював
         return cls.execute_stopped(f'Користувача {name if name else ''} не знайдено')
@@ -155,6 +175,7 @@ class MyCreditCommand(BotCommand):
 
 class HighscoreCommand(BotCommand):
     description = "Кращі: ТОП користувачів з найвищим рейтингом."
+    info = "Ними пишається партія."
 
     @classmethod
     def command_name(cls) -> str:
@@ -184,6 +205,7 @@ class HighscoreCommand(BotCommand):
     
 class LowscoreCommand(BotCommand):
     description = "Гірші: ТОП користувачів з найгіршим рейтингом."
+    info = "Перешкоди партії."
 
     @classmethod
     def command_name(cls) -> str:
@@ -225,6 +247,7 @@ class DateCommand(BotCommand):
     
 class HelpCommand(BotCommand):
     description = 'Допомога або команди'
+    info = "Команда для цього повідомлення."
 
     @classmethod
     def command_name(cls) -> str:
@@ -232,18 +255,18 @@ class HelpCommand(BotCommand):
     
     @classmethod
     async def execute(self, msg: aiogram.types.Message, args, by_str: str = None):
-        commands = self.get_commands_description()
+        commands = self.get_commands_info()
 
         if not repo_staff.get_by_id(msg.from_user.id):
             commands = [command for command in commands if not command.startswith("/give")]
 
         cmd_list_str = '\n'.join(commands)
-        return f'''Я можу виконувати команди, якщо звернешся через слово "суд" або відповіси на моє повідомлення. 
+        return f'''
+Для команд, де потрібен нік, можна обійтися відповіддю на чуже повідомлення.
 
-Я вмію в:
 {cmd_list_str}
 
-Також я вмію розпізнавати текст на наявність команд.'''
+Можу розпізнавати команди в тексті, якщо перше слово "суд".'''
     
 class AddAdminCommand(BotCommand):
     ignore = True
@@ -401,6 +424,272 @@ class DeleteUserCommand(BotCommand):
             return f'користувач @{user.name} з ID {id_to_delete} успішно видалений.'
         else:
             return cls.execute_stopped('Користувач не знайдений.')
+        
+
+
+
+class MakebetCommand(BotCommand):
+    description = "Зіграти ставку / укласти парі"
+    info = '''Зробити ставку (укласти парі) і зіграти.
+Якщо без ніку, то будь-хто може прийняти.
+Макс. ставка — 300 кредитів. Якщо учасники мають більше, ліміт збільшується.'''
+
+    @classmethod
+    def command_name(cls) -> str:
+        return "bet"
+
+    @classmethod
+    async def execute(cls, msg: aiogram.types.Message, args, by_str: str = None):
+        person = repo_user.by_tg(msg.from_user.id)
+        if not person:
+            return cls.execute_stopped('Я тебе не знаю')
+        
+        target = None
+        target_username = find_username(by_str)
+        amount = find_number(by_str)
+
+        if target_username:
+            target = repo_user.by_name(target_username)
+        if not target:
+            target_msg = msg.reply_to_message
+        
+            if target_msg:
+                target = await repo_user.by_tg_message(target_msg)
+            
+                if not target:
+                    return cls.execute_stopped(f'щось пішло не так під час додавання {target_msg.from_user.full_name if target_msg.from_user else "(Не можу вимовити ім'я)"} в мою базу даних')
+
+        if not amount:
+            return cls.execute_stopped(f'через неправильний формат числа кредитів')
+
+        if amount < 10:
+            return f'Давай нормально грати: які ще {amount} кредитів? Я приймаю лише 10 і більше'
+        
+        if amount > 300:
+            if person.score < amount:
+                return f'Нє, так діло не піде. 300 кредитів на одну ставку. Якби в тебе було більше ніж {amount} кредитів, то тоді так.'
+            elif target and target.score < amount:
+                return f'Бачу в твого дружка менше {amount} кредитів. Гра піде, якщо 300 кредитів на одну ставку.'
+            
+
+        cd = Cooldown(person)
+        bet_count = await cd.get_usage_count(CooldownType.BET)
+
+        if bet_count >= 3:
+            return f'Сьогодні ти не можеш укладати парі, лише приймати.'
+        
+        bet_count += 1
+        await cd.update_cooldown(CooldownType.BET, bet_count)
+        await repo_user.update_cooldown(person.id, cd)
+        
+        if target:
+            # Логіка для приватної гри
+            bet_message = await msg.answer(f"{hbold(f'{person.fullname} укладає парі на {amount} кредитів')}\nі запрошує {target.fullname} (@{target.name})", parse_mode='html')
+            
+            keyboard = InlineKeyboardBuilder()
+
+            keyboard.button(text="Ігнорувати",
+                callback_data=f"ignore:{person.id}:{target.id}:{msg.chat.id}:{bet_message.message_id}"),
+            
+            keyboard.button(text="Прийняти",
+                callback_data=f"accept:{amount}:{person.id}:{target.id}:{msg.chat.id}:{bet_message.message_id}")
+
+            await bet_message.edit_text(f"{hbold(f'{person.fullname} укладає парі на {amount} кредитів')}\nі запрошує {target.fullname} (@{target.name})", 
+                reply_markup=keyboard.as_markup(), 
+                parse_mode='html')
+            
+            # Функція для оновлення повідомлення з таймером
+            async def update_message():
+                for remaining in range(60, -1, -5):  # хвилина з оновленням кожні 5 секунд
+                    if remaining % 15 == 0:  # Оновлення тексту повідомлення кожні 15 секунд для зменшення навантаження на API
+                        try:
+                            await bet_message.edit_text(
+                                f"{hbold(f'{person.fullname} укладає парі на {amount} кредитів')}\nі запрошує {target.fullname} (@{target.name})\nЗалишилося: {remaining} секунд", 
+                                reply_markup=keyboard.as_markup(), 
+                                parse_mode='html')
+                        except:
+                            return                
+                    await asyncio.sleep(5)
+                await msg.delete()
+                try:
+                    await bet_message.delete()  # Видалення повідомлення після завершення часу очікування
+
+                    await cd.update_cooldown(CooldownType.BET, bet_count-1)
+                    await repo_user.update_cooldown(person.id, cd)
+                except:
+                    pass   # it's okay
+            
+            # Запуск функції оновлення повідомлення з таймером
+            asyncio.create_task(update_message())
+
+        else:
+            disclaimer_text = f'Можуть приймати ті, в кого є {amount} кредитів.\n' if amount > 300 else ''
+
+            # Логіка для публічної гри
+            bet_message = await msg.answer(f"{hbold(f'{person.fullname} укладає парі на {amount} кредитів')}\nЧи хтось хоче прийняти виклик?{disclaimer_text}", parse_mode='html')
+            
+            keyboard = InlineKeyboardBuilder()
+            keyboard.button(text="Прийняти виклик", 
+                callback_data=f"accept:{amount}:{person.id}:0:{msg.chat.id}:{bet_message.message_id}")
+
+            await bet_message.edit_text(f"{hbold(f'{person.fullname} укладає парі на {amount} кредитів')}\nЧи хтось хоче прийняти виклик?{disclaimer_text}", 
+                reply_markup=keyboard.as_markup(), 
+                parse_mode='html')
+            
+            # Функція для оновлення повідомлення з таймером
+            async def update_message():
+                for remaining in range(60, -1, -5):  # хвилина з оновленням кожні 5 секунд
+                    if remaining % 15 == 0:  # Оновлення тексту повідомлення кожні 15 секунд для зменшення навантаження на API
+                        try:
+                            await bet_message.edit_text(
+                                f"{hbold(f'{person.fullname} укладає парі на {amount} кредитів')}\nЧи хтось хоче прийняти виклик?\n{disclaimer_text}Залишилося: {remaining} секунд", 
+                                reply_markup=keyboard.as_markup(), 
+                                parse_mode='html')
+                        except:
+                            return                
+                    await asyncio.sleep(5)
+                await msg.delete()
+                try:
+                    await bet_message.delete()  # Видалення повідомлення після завершення часу очікування
+
+                    await cd.update_cooldown(CooldownType.BET, bet_count-1)
+                    await repo_user.update_cooldown(person.id, cd)
+                except:
+                    pass   # it's okay
+            
+            # Запуск функції оновлення повідомлення з таймером
+            asyncio.create_task(update_message())
+        return None
+    
+async def safe_send_dice(chat_id: int, emoji: str):
+    try:
+        msg = await bot.send_dice(chat_id, emoji=emoji)
+        return msg
+    except TelegramRetryAfter as e:
+        print(f"Спроба перевищила ліміт, чекаємо {e.retry_after} секунд.")
+        await asyncio.sleep(e.retry_after)  # Чекаємо рекомендований час
+        await safe_send_dice(chat_id)  # Спроба відправити ще раз після паузи
+    except TelegramAPIError as e:
+        print(f"Сталася помилка Telegram API: {e}")
+
+async def safe_send_text(chat_id: int, text: str, parse_mode = None):
+    try:
+        msg = await bot.send_message(chat_id, text=text)
+        return msg
+    except TelegramRetryAfter as e:
+        print(f"Спроба перевищила ліміт, чекаємо {e.retry_after} секунд.")
+        await asyncio.sleep(e.retry_after)  # Чекаємо рекомендований час
+        await safe_send_dice(chat_id)  # Спроба відправити ще раз після паузи
+    except TelegramAPIError as e:
+        print(f"Сталася помилка Telegram API: {e}")
+
+async def safe_answer_callback_query(callback_query_id):
+    try:
+        callback = await bot.answer_callback_query(callback_query_id)
+        return callback
+    except TelegramRetryAfter as e:
+        print(f"Спроба перевищила ліміт, чекаємо {e.retry_after} секунд.")
+        await asyncio.sleep(e.retry_after)  # Чекаємо рекомендований час
+        await safe_answer_callback_query(callback_query_id)  # Спроба відправити ще раз після паузи
+    except TelegramAPIError as e:
+        print(f"Сталася помилка Telegram API: {e}")
+
+@dp.callback_query(lambda c: c.data and c.data.startswith('accept'))
+async def handle_accept(callback_query: aiogram.types.CallbackQuery):
+    await safe_answer_callback_query(callback_query.id)
+
+    print(callback_query.data.split(':'))
+    _, amount, user_id, target_id, chat_id, bet_message_id = callback_query.data.split(':')
+    amount, user_id, target_id, chat_id, bet_message_id = int(amount), int(user_id), int(target_id), int(chat_id), int(bet_message_id)
+    
+    if target_id == 0:
+        pass
+    elif not target_id == callback_query.from_user.id:
+        return None
+    
+    target = repo_user.by_tg(callback_query.from_user.id)
+    if target:
+        if target.id == user_id:
+            return None
+    else:
+        t = callback_query.from_user
+        target = Person(t.id, t.full_name, name=t.username)
+        repo_user.add(target)
+    
+    if target.score < amount:
+        return None
+    
+    person = repo_user.by_tg(user_id)
+
+    # Оновлення тексту повідомлення ставки, повідомляючи, що ставку прийнято
+    await bot.delete_message(chat_id=chat_id, message_id=bet_message_id)
+
+    await safe_send_text(chat_id=chat_id, text=f"Ставку прийнято користувачем {target.fullname} (@{target.name}).", parse_mode='HTML')
+    
+    # Тут логіка обробки прийняття ставки...
+    # Відправка кубиків
+    await asyncio.sleep(2)  # Затримка перед відправленням другого кубика
+    msg1 = await safe_send_dice(chat_id, emoji="🎲")
+    await asyncio.sleep(2)  # Затримка перед відправленням другого кубика
+    msg2 = await safe_send_dice(chat_id, emoji="🎲")
+    await asyncio.sleep(2)
+        
+    #await cd.update_cooldown(CooldownType.BET, bet_count+1)
+
+    target_credits = 0
+    person_credits = 0
+
+    #await repo_user.update_cooldown(cd)
+    if msg1.dice.value > msg2.dice.value:
+        person_credits = amount
+        target_credits = -amount
+
+    elif msg1.dice.value < msg2.dice.value:
+        person_credits = -amount
+        target_credits = amount
+    else:
+        n = msg1.dice.value
+        if n == 1:
+            person_credits = -100
+            target_credits = -100
+        if n == 6:
+            person_credits = +100
+            target_credits = +100
+        else:
+            await safe_send_text(chat_id=chat_id, text='Ніхто не переміг: кредити не переписані.')
+            return None
+
+    async def give(person: Person, credits: int):
+        await repo_user.update_person(person.id, score=person.score+credits)
+        
+    await give(person, person_credits)
+    await give(target, target_credits)
+
+    await safe_send_text(chat_id=chat_id, text=f'''
+Результат:
+{person.fullname} має {person.score} і отримує {person_credits}
+{target.fullname} має {target.score} і отримує {target_credits}''', parse_mode='html')
+
+@dp.callback_query(lambda c: c.data and c.data.startswith('ignore'))
+async def handle_ignore(callback_query: aiogram.types.CallbackQuery):
+    await safe_answer_callback_query(callback_query.id)
+    _, user_id, target_id, chat_id, bet_message_id = callback_query.data.split(':')
+    user_id, target_id, chat_id, bet_message_id = int(user_id), int(target_id), int(chat_id), int(bet_message_id)
+
+    if target_id == 0 or not callback_query.from_user.id == target_id:
+        return None
+    
+    try:
+        # Оновлення тексту повідомлення ставки, повідомляючи, що ставку ігнорують
+        await bot.edit_message_text(chat_id=chat_id, message_id=bet_message_id,
+            text=f"Ставку проігноровано користувачем.", parse_mode='HTML')
+    except TelegramRetryAfter as e:
+        print(f"Спроба перевищила ліміт, чекаємо {e.retry_after} секунд.")
+        await asyncio.sleep(e.retry_after)  # Чекаємо рекомендований час
+        await bot.edit_message_text(chat_id=chat_id, message_id=bet_message_id,
+            text=f"Ставку проігноровано користувачем.", parse_mode='HTML')
+
+        
 
 # Ініціалізація команд
     
@@ -409,6 +698,7 @@ help_command = HelpCommand()
 check_credit_command = MyCreditCommand()
 highscore_command = HighscoreCommand()
 lowscore_command = LowscoreCommand()
+makebet_command = MakebetCommand()
 #date_command = DateCommand()
 
 # mod command

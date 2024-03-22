@@ -127,6 +127,23 @@ class BotCommand:
         # Формування списку описів команд
         descriptions = [f"/{command} - {description}" for command, description in sorted_commands]
         return descriptions
+    
+    @staticmethod
+    def get_commands_info():
+        commands_dict = {}
+        for cls in BotCommand.__subclasses__():
+            command_name = cls.command_name()
+            # Перевірка, чи вже існує запис у словнику, щоб уникнути дублів
+            if command_name not in commands_dict:
+                if hasattr(cls, 'info'):
+                    commands_dict[command_name] = cls.info
+        
+        # Сортування команд за назвою для забезпечення визначеного порядку
+        sorted_commands = sorted(commands_dict.items(), key=lambda item: item[0])
+        
+        # Формування списку описів команд
+        infos = [f"/{command} - {info}" for command, info in sorted_commands]
+        return infos
 
 
     

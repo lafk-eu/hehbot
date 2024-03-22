@@ -1,6 +1,7 @@
 import sqlite3, aiogram, aiosqlite
-from datetime import datetime
+from datetime import datetime, timedelta
 from functools import singledispatchmethod
+from dateutil import parser
 
 from hehbot.client import Person, repo_user
 
@@ -86,17 +87,18 @@ class ChatMessageRepository:
             conn.commit()
 
     async def add_message(self, msg: ChatMessage):
-        async with aiosqlite.connect(self.db_path) as conn:
-            n = msg.user_number
-            tg = msg.tg if hasattr(msg, 'tg') else -1
-            tg_group = msg.tg_group if hasattr(msg, 'tg_group') else -1
+        n = msg.user_number
+        tg = msg.tg if hasattr(msg, 'tg') else -1
+        tg_group = msg.tg_group if hasattr(msg, 'tg_group') else -1
 
-            async with conn.cursor() as cursor:
-                await cursor.execute('''
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+        cursor.execute('''
                     INSERT INTO chat_messages (user_number, user_id, message_date, message_text, group_id)
                     VALUES (?, ?, ?, ?, ?)
                 ''', (n, tg, msg.date, msg.text, tg_group))
-                await conn.commit()
+        conn.commit()
+        conn.close()
 
     def get_last_messages_by_user(self, user_number: int, group_id: int, limit: int = 10) -> list[ChatMessage]:
         with sqlite3.connect(self.db_path) as conn:
@@ -138,6 +140,27 @@ class ChatMessageRepository:
                 }
                 messages.append(ChatMessage.from_dict(msg_dict))
             return messages
+        
+    async def can_send_message(self, user_number: int, group_id: int) -> bool:
+        async with aiosqlite.connect(self.db_path) as conn:
+            async with conn.execute('''
+                SELECT message_date FROM chat_messages
+                WHERE user_number = ? AND group_id = ?
+                ORDER BY message_date DESC
+                LIMIT 1
+            ''', (user_number, group_id)) as cursor:
+                row = await cursor.fetchone()
+                if row:
+                    # Припустимо, row[0] містить часову мітку у форматі 'YYYY-MM-DD HH:MM:SS+00:00'
+                    last_message_time = parser.parse(row[0])  # Розбір дати і часу із часовим поясом
+
+                    # Для порівняння з поточним часом, вам потрібно або конвертувати last_message_time до поточного часового поясу,
+                    # або використати час у UTC для порівняння. Тут ми використовуємо datetime.now() з конвертацією в UTC:
+                    current_time = datetime.now(parser.parse(row[0]).tzinfo)
+
+                    if current_time - last_message_time < timedelta(seconds=5):
+                        return False
+        return True
         
 
 repo_msg = ChatMessageRepository('data/msg.db')
