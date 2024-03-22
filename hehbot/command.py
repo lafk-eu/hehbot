@@ -616,7 +616,7 @@ async def handle_accept(callback_query: aiogram.types.CallbackQuery):
         target = Person(t.id, t.full_name, name=t.username)
         repo_user.add(target)
     
-    if target.score < amount:
+    if amount > 300 and target.score < amount:
         return None
     
     person = repo_user.by_tg(user_id)
@@ -680,9 +680,10 @@ async def handle_ignore(callback_query: aiogram.types.CallbackQuery):
         return None
     
     try:
+        await safe_send_text(chat_id, text=f"Ставку проігноровано користувачем.", parse_mode='HTML')
         # Оновлення тексту повідомлення ставки, повідомляючи, що ставку ігнорують
-        await bot.edit_message_text(chat_id=chat_id, message_id=bet_message_id,
-            text=f"Ставку проігноровано користувачем.", parse_mode='HTML')
+        await bot.delete_message(chat_id=chat_id, message_id=bet_message_id)
+
     except TelegramRetryAfter as e:
         print(f"Спроба перевищила ліміт, чекаємо {e.retry_after} секунд.")
         await asyncio.sleep(e.retry_after)  # Чекаємо рекомендований час
