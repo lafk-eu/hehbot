@@ -93,13 +93,14 @@ async def verify_user(msg: types.Message) -> Person | None:
     
     if str(msg.text).lower().startswith('суд') or str(msg.text).startswith('/'):
         # message has text
-        if len(str(msg.text)) > 100:
+        if len(str(msg.text)) > 40:
             await msg.answer("Я не читаю повідомлення в яких більше 8 літер.")
             return None
     elif msg.reply_to_message and msg.reply_to_message.from_user.id == bot.id:
             idi = await BotCommand.compare_async(msg.text)
             if idi and idi.command_name() == 'idi_nakhuy':
                 await idi.execute(msg, [], '')
+            return None
     else:
         return None
     

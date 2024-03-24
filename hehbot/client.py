@@ -6,6 +6,8 @@ from enum import Enum
 
 import random
 
+hidden_users = ('llafk', 'GroupAnonymousBot', 'Channel_Bot', 'PlatoJudge_bot', 'gleb_sochyvets')
+
 class Person:
     def __init__(self, id: int, fullname: str = '', avatar: str = '', name: str = '', number: int = -1, score: int = 1000, cooldown: str = '') -> None:
         self.id = id
@@ -251,7 +253,6 @@ class PersonRepository(IPersonRepository):
             repo_staff.delete(tg)
 
     def with_lowest_scores(self, limit: int) -> List[Person]:
-        excluded_names = ('llafk', 'GroupAnonymousBot', 'Channel_Bot')
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
         # Виключення користувачів з певними іменами з результатів
@@ -260,13 +261,12 @@ class PersonRepository(IPersonRepository):
             WHERE name NOT IN (?, ?, ?)
             ORDER BY score ASC 
             LIMIT ?
-        ''', (*excluded_names, limit))
+        ''', (*hidden_users, limit))
         rows = cursor.fetchall()
         conn.close()
         return [self.by_tg(row[0]) for row in rows]
 
     def with_highest_scores(self, limit: int) -> List[Person]:
-        excluded_names = ('llafk', 'GroupAnonymousBot', 'Channel_Bot')
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
         # Виключення користувачів з певними іменами з результатів
@@ -275,7 +275,7 @@ class PersonRepository(IPersonRepository):
             WHERE name NOT IN (?, ?, ?)
             ORDER BY score DESC 
             LIMIT ?
-        ''', (*excluded_names, limit))
+        ''', (*hidden_users, limit))
         rows = cursor.fetchall()
         conn.close()
         return [self.by_tg(row[0]) for row in rows]
