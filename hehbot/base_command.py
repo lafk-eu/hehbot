@@ -230,8 +230,8 @@ class BotCommand:
 
                 print(f"Команда: {subclass.command_name()}, Схожість: {similarity:.2f}")  # Виводимо назву команди та схожість
                 if similarity > max_similarity and similarity >= 0.26:  # Перевіряємо поріг схожості
-                    max_similarity = similarity
-                    most_similar = subclass
-
+                    if not hasattr(subclass, 'min_similarity') or similarity >= subclass.min_similarity:
+                        max_similarity = similarity
+                        most_similar = subclass
         return most_similar
 

@@ -114,6 +114,7 @@ async def send_slot_machine(msg: aiogram.types.Message, slots: list[str]):
 
     user = repo_user.by_tg(msg.from_user.id)
     randomized_score = await randomize(score_change)
+    balance_str = f'(Баланс: {str(user.score + randomized_score)})'
 
     if score_change == 100000:
         await msg.reply_photo(photo=aiogram.types.FSInputFile(slot_machine_path+'jackpot.jpg'), caption='Це — скарб!')
@@ -128,10 +129,10 @@ async def send_slot_machine(msg: aiogram.types.Message, slots: list[str]):
         if score_change >= 250 or score_change <= -250:
             img_path = await draw_slot_machine_image_async(user.id, score_change, randomized_score)
             if img_path:
-                await msg.reply_photo(aiogram.types.FSInputFile(img_path), caption= 'Нова спроба завтра.')
+                await msg.reply_photo(aiogram.types.FSInputFile(img_path), caption= f'Нова спроба завтра. {balance_str}')
                 await repo_user.update_person(user.id, score=user.score + randomized_score)
                 return None
-        await msg.reply(f'Отримано {randomized_score} соціальних кредитів за вашу гру! Нова спроба завтра.')
+        await msg.reply(f'Отримано {randomized_score} соціальних кредитів за вашу гру! Нова спроба завтра. {balance_str}')
         
     else:
         return 'Отакої! Отримано 0 кредитів! Нова спроба завтра'

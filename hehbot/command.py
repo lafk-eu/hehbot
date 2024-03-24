@@ -56,7 +56,7 @@ def remove_english_words(text: str) -> str:
     return result
 
 class SetCreditCommand(BotCommand):
-    description = "+300 соціальних кредитів"
+    description = "+300 рейтингу (видати кредити)"
     info = "Видати кредити; потрібні нік та число."
 
     @classmethod
@@ -175,7 +175,7 @@ class MyCreditCommand(BotCommand):
 
 class HighscoreCommand(BotCommand):
     description = "Кращі: ТОП користувачів з найвищим рейтингом."
-    info = "Ними пишається партія."
+    info = "Кращі: ними пишається партія."
 
     @classmethod
     def command_name(cls) -> str:
@@ -205,7 +205,7 @@ class HighscoreCommand(BotCommand):
     
 class LowscoreCommand(BotCommand):
     description = "Гірші: ТОП користувачів з найгіршим рейтингом."
-    info = "Перешкоди партії."
+    info = "Гірші: перешкоди партії."
 
     @classmethod
     def command_name(cls) -> str:
@@ -228,6 +228,33 @@ class LowscoreCommand(BotCommand):
 
         await send_lowscore_image(msg, limit=limit)
         return None
+    
+class IdiNakhuyCommand(BotCommand):
+    description = "іді нахуй"
+    ignore = True
+    min_similarity = 0.70
+
+    @classmethod
+    def command_name(cls) -> str:
+        return "idi_nakhuy"
+
+    @classmethod
+    async def execute(self, msg: aiogram.types.Message, args, by_str: str = None):
+        person = repo_user.by_tg(msg.from_user.id)
+        cooldown = Cooldown(person)
+
+        if await cooldown.get_usage_count(CooldownType.IDI):
+            await msg.reply('Сам іді')
+            return
+        
+        await cooldown.update_cooldown(CooldownType.IDI, 1)
+        
+        score_change = 300 if person.score < 0 else -300
+
+        await send_changed_credit_image(person, score_change, msg, caption='Сам іді')
+        await repo_user.update_person(person.id, score=person.score+score_change)
+        await repo_user.update_cooldown(person.id, cooldown)
+
     
 class DateCommand(BotCommand):
     #description = "Поточна дата."
@@ -374,9 +401,9 @@ class GetAdminListCommand(BotCommand):
 
             def staff_info(member: StaffPerson) -> str:
                 if not member.admin:
-                    return f'модер ({member.credits} кредитів на сьогодні з {member.max_credits})'
+                    return f'інспектор ({member.credits} кредитів на сьогодні з {member.max_credits})'
                 else:
-                    return 'адмін'
+                    return 'голова'
 
             members = repo_staff.get_all()
             for member in members:
@@ -425,6 +452,12 @@ class DeleteUserCommand(BotCommand):
         else:
             return cls.execute_stopped('Користувач не знайдений.')
         
+
+
+
+
+
+
 
 
 
@@ -700,6 +733,7 @@ check_credit_command = MyCreditCommand()
 highscore_command = HighscoreCommand()
 lowscore_command = LowscoreCommand()
 makebet_command = MakebetCommand()
+idi_nakhuy_command = IdiNakhuyCommand()
 #date_command = DateCommand()
 
 # mod command

@@ -35,6 +35,9 @@ async def handle_slot_machine(msg: Message, slots: list[str]):
             await repo_user.update_person(id=person.id, cooldown='slots '+person.cooldown)
         else:
             await msg.reply('Почекаєш до наступної доби (до 00:00)')
+    else:
+        if not person:
+            await msg.reply('Я не можу тебе додати в базу даних, бо в тебе немає нікнейму або імені в профілі.')
         
 
         #await repo_user.update_person(person.id, score=person.score + score_change)

@@ -19,6 +19,7 @@ class Person:
 class CooldownType(Enum):
     SLOTS = 'slots'
     BET = 'bet'
+    IDI = 'idi'
 
 class Cooldown:
     def __init__(self, person: Person) -> None:
@@ -27,6 +28,8 @@ class Cooldown:
     async def get_cooldown(self, cooldown_type: CooldownType) -> str:
         if cooldown_type == CooldownType.SLOTS:
             return 'slots' if 'slots' in self.cooldowns else None
+        elif cooldown_type == CooldownType.IDI:
+            return 'idi' if 'idi' in self.cooldowns else None
         elif cooldown_type == CooldownType.BET:
             for i in range(1, 4):
                 if f'bet{i}' in self.cooldowns:
@@ -34,9 +37,16 @@ class Cooldown:
             return None
 
     async def update_cooldown(self, cooldown_type: CooldownType, usage_count: int) -> None:
-        cooldown_value = f'{cooldown_type.value}{"" if cooldown_type == CooldownType.SLOTS or usage_count == 1 else usage_count}'
+        # Створюємо значення кулдауну. Для SLOTS і, потенційно, IDI кількість використань не враховуємо.
+        cooldown_value = f'{cooldown_type.value}'
+        if cooldown_type == CooldownType.BET:
+            # Для BET додаємо кількість використань, якщо вона більше 1
+            cooldown_value += f'{"" if usage_count == 1 else usage_count}'
+        
         # Видаляємо попередні кулдауни того ж типу
         self.cooldowns = [cd for cd in self.cooldowns if not cd.startswith(cooldown_type.value)]
+        
+        # Додаємо новий кулдаун
         self.cooldowns.append(cooldown_value)
 
     async def get_usage_count(self, cooldown_type: CooldownType) -> int:

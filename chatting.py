@@ -88,11 +88,18 @@ async def verify_user(msg: types.Message) -> Person | None:
     if msg.is_automatic_forward or msg.forward_from or msg.forward_from_message_id or msg.forward_origin:
         return None
     
-    if msg.text and str(msg.text).lower().startswith('суд') or str(msg.text).startswith('/'):
+    if not msg.text:
+        return None
+    
+    if str(msg.text).lower().startswith('суд') or str(msg.text).startswith('/'):
         # message has text
         if len(str(msg.text)) > 100:
             await msg.answer("Я не читаю повідомлення в яких більше 8 літер.")
             return None
+    elif msg.reply_to_message and msg.reply_to_message.from_user.id == bot.id:
+            idi = await BotCommand.compare_async(msg.text)
+            if idi and idi.command_name() == 'idi_nakhuy':
+                await idi.execute(msg, [], '')
     else:
         return None
     

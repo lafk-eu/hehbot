@@ -269,8 +269,8 @@ async def send_credit_image(person_object, msg: aiogram.types.Message):
     await msg.reply_photo(aiogram.types.FSInputFile(photo))
     return None
 
-async def send_changed_credit_image(person_object, added_credits: int, msg: aiogram.types.Message):
-    await msg.reply_photo(aiogram.types.FSInputFile(await create_changed_credit_image_async(person_object, added_credits)))
+async def send_changed_credit_image(person_object, added_credits: int, msg: aiogram.types.Message, caption = None):
+    await msg.reply_photo(aiogram.types.FSInputFile(await create_changed_credit_image_async(person_object, added_credits)), caption=caption)
     return None
 
 async def send_highscore_image(msg: aiogram.types.Message, limit: int = 5):
